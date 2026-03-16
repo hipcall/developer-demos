@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Banka - Çağrı Merkezi Demo</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <header class="bank-header">
+            <div class="logo-area">
+                <span class="bank-icon">🏦</span>
+                <div>
+                    <h1>Banka</h1>
+                    <span class="subtitle">Çağrı Merkezi Senaryo Yönetimi</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="openModal()">+ Yeni Ekle</button>
+                <a href="/logs" class="btn btn-secondary">📋 İşlem Logları</a>
+            </div>
+        </header>
+
+        <div class="sub-bar">
+            <div class="contact-info">
+                <div class="phone-call">
+                    <span class="phone-icon">📞</span>
+                    <div class="text-group">
+                        <span class="call-text">Bizi arayın</span>
+                        <span class="call-desc">Eğer müşterimizseniz Müşteri temsilcisine, Eğer değilseniz satış
+                            departmanımıza yönlendirileceksiniz.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="table-header">
+                <h2>Mevcut Müşteriler</h2>
+                <p>Müşteri hizmetleri ve satış yönlendirme testleri için müşteri veritabanı.</p>
+            </div>
+            <table id="userTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Ad Soyad</th>
+                        <th>Telefon (Caller ID)</th>
+                        <th>Güvenlik PIN</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="modalOverlay" class="overlay" onclick="closeModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <h2 id="modalTitle">Müşteri Ekle / Düzenle</h2>
+            <form id="userForm">
+                <input type="hidden" id="userId">
+                <div class="form-group">
+                    <label>Ad</label>
+                    <input type="text" id="firstName" required>
+                </div>
+                <div class="form-group">
+                    <label>Soyad</label>
+                    <input type="text" id="lastName" required>
+                </div>
+                <div class="form-group">
+                    <label>Kayıtlı Telefon Numarası</label>
+                    <input type="text" id="phone" placeholder="505XXXXXXX" required>
+                </div>
+                <div class="form-group">
+                    <label>4 Haneli PIN Kodu</label>
+                    <input type="text" id="pinCode" maxlength="4" placeholder="Örn: 1903">
+                </div>
+                <!-- Role selection removed -->
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal()">İptal</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        async function fetchUsers() {
+            try {
+                const res = await fetch('/api/users');
+                const users = await res.json();
+                const tbody = document.querySelector('#userTable tbody');
+                tbody.innerHTML = '';
+
+                users.forEach(user => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${user.id}</td>
+                        <td><strong>${user.first_name} ${user.last_name}</strong></td>
+                        <td class="mono-text">${user.phone}</td>
+                        <td><span class="pin-box">${user.pin_code || '----'}</span></td>
+                        <td class="actions-cell">
+                            <button class="btn btn-edit" onclick='editUser(${JSON.stringify(user)})'>Düzenle</button>
+                            <button class="btn btn-delete" onclick="deleteUser(${user.id})">Sil</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error("Kullanıcılar yüklenemedi:", err);
+            }
+        }
+
+        function openModal(user = null) {
+            const overlay = document.getElementById('modalOverlay');
+            const form = document.getElementById('userForm');
+            const modalTitle = document.getElementById('modalTitle');
+            const userIdInput = document.getElementById('userId');
+
+            overlay.style.display = 'flex';
+
+            if (user) {
+                modalTitle.innerText = 'Müşteri Bilgilerini Düzenle';
+                userIdInput.value = user.id;
+                document.getElementById('firstName').value = user.first_name;
+                document.getElementById('lastName').value = user.last_name;
+                document.getElementById('phone').value = user.phone;
+                document.getElementById('pinCode').value = user.pin_code || '';
+            } else {
+                modalTitle.innerText = 'Yeni Müşteri Ekle';
+                userIdInput.value = '';
+                form.reset();
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').style.display = 'none';
+        }
+
+        async function editUser(user) {
+            openModal(user);
+        }
+
+        async function deleteUser(id) {
+            if (!confirm("Bu müşteriyi silmek istediğinize emin misiniz?")) return;
+            await fetch(`/api/users/${id}`, { method: 'DELETE' });
+            fetchUsers();
+        }
+
+        document.getElementById('userForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('userId').value;
+            const data = {
+                first_name: document.getElementById('firstName').value,
+                last_name: document.getElementById('lastName').value,
+                phone: document.getElementById('phone').value,
+                pin_code: document.getElementById('pinCode').value
+            };
+
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `/api/users/${id}` : '/api/users';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    closeModal();
+                    fetchUsers();
+                } else {
+                    alert("Kayıt sırasında bir hata oluştu.");
+                }
+            } catch (err) {
+                console.error("İşlem hatası:", err);
+            }
+        };
+
+        fetchUsers();
+    </script>
+</body>
+
+</html>
