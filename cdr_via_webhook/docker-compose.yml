@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  cdr-app:
+    build: .
+    ports:
+      - "5007:5007"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - PORT=5007
+    restart: always

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hipcall CDR Dashboard | CRM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-headset"></i>
+                <div style="display: flex; flex-direction: column;">
+                    <span style="line-height: 1;">Dummy CRM</span>
+                    <small style="font-size: 0.7rem; font-weight: 300; opacity: 0.8; margin-top: 4px;">Online çağrı
+                        kayıtlarınız</small>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <p>Dummy App v1.0</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+
+            <div class="content-wrapper">
+                <div class="page-title">
+                    <h1>Çağrı Detay Raporları (CDR)</h1>
+                    <p>Hipcall üzerinden gelen tüm sonlandırılmış çağrı kayıtları.</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon incoming">
+                            <i class="fas fa-arrow-down"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Gelen Çağrı</h3>
+                            <p id="total-inbound">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon outgoing">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Giden Çağrı</h3>
+                            <p id="total-outbound">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon missed">
+                            <i class="fas fa-phone-slash"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Cevapsız</h3>
+                            <p id="total-missed">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon duration">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Ort. Süre</h3>
+                            <p id="avg-duration">0s</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <h2>Son Çağrılar</h2>
+                        <button class="btn-refresh" onclick="fetchCDRs()">
+                            <i class="fas fa-sync-alt"></i> Yenile
+                        </button>
+                    </div>
+                    <table class="cdr-table">
+                        <thead>
+                            <tr>
+                                <th>Yön</th>
+                                <th>Arayan</th>
+                                <th>Aranan</th>
+                                <th>Süre</th>
+                                <th>Tarih</th>
+                                <th>İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cdr-body">
+                            <!-- Veriler buraya yüklenecek -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Details Modal -->
+    <div id="details-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div class="modal-header">
+                <h2><i class="fas fa-info-circle"></i> Çağrı Detayları</h2>
+                <div id="modal-call-status" class="tag">Tamamlandı</div>
+            </div>
+            <div class="modal-body">
+                <div class="detail-row">
+                    <span class="label">Call UUID:</span>
+                    <span id="detail-uuid" class="value">-</span>
+                </div>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="label">Arayan:</span>
+                        <span id="detail-caller" class="value">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Aranan:</span>
+                        <span id="detail-callee" class="value">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Yön:</span>
+                        <span id="detail-direction" class="value">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Süre:</span>
+                        <span id="detail-duration" class="value">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Başlangıç:</span>
+                        <span id="detail-start" class="value">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Bitiş:</span>
+                        <span id="detail-end" class="value">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Kapatan Taraf:</span>
+                        <span id="detail-hangup" class="value">-</span>
+                    </div>
+                </div>
+                <div class="record-player" id="record-player-container" style="display:none;">
+                    <h3><i class="fas fa-play"></i> Ses Kaydı</h3>
+                    <audio id="detail-audio" controls>
+                        Tarayıcınız ses çalmayı desteklemiyor.
+                    </audio>
+                </div>
+                <div class="raw-data">
+                    <h3><i class="fas fa-code"></i> Ham Veri (Webhook Payload)</h3>
+                    <pre id="detail-raw"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+
+</html>
