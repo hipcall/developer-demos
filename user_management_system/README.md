@@ -8,22 +8,15 @@ This project is a basic dummy program that demonstrates how [**Hipcall External 
 
 ---
 
-## 🚀 Scenarios & Features
+## 🚀 Features
 
-The project demonstrates three core interaction scenarios commonly used in telephony integrations:
+The project demonstrates a core telephony interaction:
 
 1.  **PIN Query (PIN Sorgulama):**
-    *   Authenticates users by requesting a 4-digit PIN code via IVR.
-    *   Matches the caller's phone number with the database and verifies the entered PIN.
-    *   Plays success or error messages based on the result.
-
-2.  **External Routing (Dış Yönlendirme):**
-    *   Demonstrates the `dial` action by routing the call to an external phone number.
-    *   The destination number can be dynamically updated via the management settings.
-
-3.  **Internal Routing (İç Yönlendirme):**
-    *   Demonstrates the `connect` action by routing the call to a specific internal extension.
-    *   The target extension can be configured through the web interface.
+    *   Authenticates users by requesting a 1-4 digit PIN code via IVR.
+    *   Matches the caller's phone number in the database.
+    *   **Success:** If PIN is correct, redirects the call to the **Customer Representative** (`1091`).
+    *   **Failure:** If PIN is incorrect, redirects the call to the **Sales Team** (`1092`).
 
 ---
 
@@ -31,11 +24,8 @@ The project demonstrates three core interaction scenarios commonly used in telep
 
 The application provides a web-based dashboard for managing the system:
 
-*   **User Management & PIN Query:** Add, edit, or delete user records. For **Scenario 1**, the caller's phone number must exist in this table. The caller will be prompted for their `pin_code`. If the entered PIN matches the customer's PIN, a success message plays; otherwise, an error message plays.
-*   **Active Routing Settings (Settings Menu):** You can define multiple target phone numbers and extensions from the settings interface. The active choices selected via checkboxes here dictate the destination for routing scenarios:
-    *   **Active Dial Number:** Defines the destination phone number used in **Scenario 2** (External Routing). The number marked as active is the one the Hipcall system will `dial`.
-    *   **Active Extension:** Defines the target internal extension used in **Scenario 3** (Internal Routing). The extension marked as active is the one the Hipcall system will `connect` the call to.
-*   **Log Tracking:** Monitor real-time logs of the webhook POST requests coming from the Hipcall Ingress API. You can see the full request body (caller info, digits pressed, etc.) and the JSON sequence response returned by our dummy system.
+*   **User Management:** Add, edit, or delete user records and their respective PIN codes.
+*   **Log Tracking:** Monitor real-time logs of the webhook POST requests coming from the Hipcall Ingress API. You can see the full request body (caller info, digits pressed, etc.) and the JSON sequence response returned by the system.
 
 ---
 
@@ -70,14 +60,14 @@ user_management_system/
 ```bash
 docker-compose up --build
 ```
-The application will be accessible at `http://localhost:5005`.
+The application will be accessible at `http://localhost:5000`.
 
 **Default Login:**
 - **Username:** `admin`
 - **Password:** `admin123`
 
 ### Using External Management in Hipcall
-You can create a new external management by clicking **Settings > External Managements** in the top right corner.
+You can create a new external management by clicking **Settings > Developer > External Managements** in the top right corner.
 The endpoint used for this dummy application is: `/api/external/hipcall-ingress`
 
 ---
