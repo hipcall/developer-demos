@@ -1,46 +1,65 @@
-# Hipcall CDR Webhook Dummy App
+# Hipcall CDR Webhook Integration Example (Dummy App)
 
-Bu uygulama, Hipcall üzerinden gelen çağrı kayıtlarını (CDR) webhook aracılığıyla almak ve bir CRM dashboard'unda görüntülemek için tasarlanmıştır.
+This is a **dummy application** designed to demonstrate how to receive and process Call Detail Records (CDR) from Hipcall using webhooks. It serves as a reference implementation for developers looking to integrate Hipcall events into their own systems.
 
-## Kurulum ve Çalıştırma
+## 📋 Overview
 
-1. Bağımlılıkları yükleyin:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. Veritabanını başlatın:
-   ```bash
-   python init_db.py
-   ```
-3. Uygulamayı çalıştırın:
-   ```bash
-   python app.py
-   ```
-   Uygulama varsayılan olarak `http://localhost:5007` adresinde çalışacaktır.
+The goal of this project is to show the end-to-end flow of a CDR webhook integration:
+1.  **Hipcall** triggers a `call.ended` or `call_hangup` event.
+2.  The **Webhook Endpoint** (`/webhook/hipcall-cdr`) receives the JSON payload.
+3.  The **Backend** (Flask) parses the data and stores it in a local SQLite database.
+4.  A **Simple Dashboard** displays the recorded data for verification.
 
-## ngrok ile Dış Dünyaya Açma (Yerel Test İçin)
+## 🛠️ Setup Instructions
 
-Hipcall'un yerel bilgisayarınızdaki uygulamaya ulaşabilmesi için `ngrok` kullanabilirsiniz:
+### 1. Prerequisites
+- Python 3.8+
+- [ngrok](https://ngrok.com/) (required for receiving webhooks on a local machine)
 
-1. Yeni bir terminal penceresi açın ve şu komutu çalıştırın:
-   ```bash
-   ngrok http 5007
-   ```
-2. Ekrandaki **Forwarding** satırında yazan (örn: `https://abcd-123.ngrok-free.app`) adresi kopyalayın.
-3. Hipcall panelindeki URL alanına bu adresi sonuna `/webhook/hipcall-cdr` ekleyerek yapıştırın:
-   `https://abcd-123.ngrok-free.app/webhook/hipcall-cdr`
+### 2. Installation
+```bash
+# Install required Python packages
+pip install -r requirements.txt
 
-## Hipcall Entegrasyonu
+# Initialize the SQLite database schema
+python init_db.py
 
-Hipcall panelinde bir webhook oluştururken şu ayarları yapın:
+# Run the Flask development server
+python app.py
+```
+The application will run locally at `http://localhost:5007`.
 
-- **Target URL:** `http://[SUNUCU_IP_VEYA_DOMAIN]:5007/webhook/hipcall-cdr`
-- **Events:** `Çağrı kapanışı` (call.ended)
+### 3. Docker Setup (Recommended)
+You can run the entire stack using Docker and Docker Compose without manual dependency installation:
+```bash
+# Build and start the container in detached mode
+docker-compose up -d
+```
+The app will be available at `http://localhost:5007`. The database file will be persisted in the `./data` directory on your host machine.
 
-## Proje Yapısı
+### 4. Exposing for Hipcall (ngrok)
+Since Hipcall needs a public URL to send webhooks, use ngrok to tunnel your local port:
+1. Run: `ngrok http 5007`
+2. Copy the generated URL (e.g., `https://random-id.ngrok-free.app`).
+3. Your webhook target URL will be: `https://random-id.ngrok-free.app/webhook/hipcall-cdr`
 
-- `app.py`: Flask sunucusu ve webhook endpoint'i.
-- `init_db.py`: SQLite veritabanı şema oluşturucu.
-- `templates/`: Dashboard arayüzü (HTML).
-- `static/`: CSS ve JS dosyaları.
-- `data/`: Veritabanı dosyasının saklandığı dizin.
+## 🔗 Hipcall Configuration
+
+In your Hipcall Webhook settings, use the following configuration:
+
+| Field | Value |
+| :--- | :--- |
+| **Target URL** | Your ngrok or Server URL + `/webhook/hipcall-cdr` |
+| **Events** | `Call Ended` (`call.ended`) |
+| **Method** | `POST` |
+
+## 📂 Project Structure
+
+- `app.py`: Contains the webhook endpoint logic and basic API.
+- `init_db.py`: Sets up the database tables (ran automatically in Docker).
+- `Dockerfile` & `docker-compose.yml`: Containerization configuration.
+- `templates/index.html`: A basic dashboard to view received CDRs.
+- `data/`: Directory where the SQLite database file is stored.
+
+---
+*Note: This is a demonstration project and is not intended for production use without further security and scalability considerations.*
