@@ -12,7 +12,7 @@ This project is a basic dummy program that demonstrates how [**Hipcall External 
 
 The project demonstrates a core telephony interaction:
 
-1.  **PIN Query (PIN Sorgulama):**
+   **PIN Query (PIN Sorgulama):**
     *   Authenticates users by requesting a 1-4 digit PIN code via IVR.
     *   Matches the caller's phone number in the database.
     *   **Success:** If PIN is correct, redirects the call to the **Customer Representative** (`1091`).
@@ -53,6 +53,7 @@ user_management_system/
 
 ### Prerequisites
 - Docker & Docker Compose (Recommended)
+- [ngrok](https://ngrok.com/) (Required for receiving webhooks from Hipcall on your local machine)
 - Python 3.8+ (For local development)
 
 ### Running with Docker
@@ -62,13 +63,19 @@ docker-compose up --build
 ```
 The application will be accessible at `http://localhost:5000`.
 
-**Default Login:**
-- **Username:** `admin`
-- **Password:** `admin123`
-
 ### Using External Management in Hipcall
 You can create a new external management by clicking **Settings > Developer > External Managements** in the top right corner.
 The endpoint used for this dummy application is: `/api/external/hipcall-ingress`
+
+### Exposing for Hipcall (ngrok)
+Since Hipcall needs a public URL to communicate with your local dummy application, use ngrok to tunnel your local port:
+1. Run: `ngrok http 5000`
+2. Copy the generated Forwarding URL (e.g., `https://random-id.ngrok-free.app`).
+3. Your Hipcall External Management target URL will be: `https://random-id.ngrok-free.app/api/external/hipcall-ingress`
+
+**Default Login:**
+- **Username:** `admin`
+- **Password:** `admin123`
 
 ---
 
