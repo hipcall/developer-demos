@@ -45,6 +45,8 @@ Since Hipcall needs a public URL to send webhooks, use ngrok to tunnel your loca
 
 ## 🔗 Hipcall Configuration
 
+At Hipcall you need to create a Webhook integration. At Account > Integrations > Create New Integration > Webhook. 
+
 In your Hipcall Webhook settings, use the following configuration:
 
 | Field | Value |

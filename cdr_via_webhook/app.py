@@ -25,8 +25,8 @@ def receive_cdr():
     # We are looking for call.ended or call_hangup events
     event_type = payload.get('event')
     data = payload.get('data', {})
-    
-    if event_type in ['call.ended', 'call_hangup']:
+    # We use call_hangup event here but you can also use other events for different purposes
+    if event_type in ['call_hangup']:
         try:
             conn = get_db_connection()
             # Check if this uuid already exists to avoid duplicates
@@ -48,7 +48,7 @@ def receive_cdr():
                     'completed',
                     data.get('started_at'),
                     data.get('ended_at'),
-                    data.get('record_url'),
+                    data.get('record_url'), #This is an expired URL, you need to download the file and store it in your own datastore for production environments.  
                     data.get('hangup_by'),
                     json.dumps(payload)
                 ))
