@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartIVR CRM Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-robot"></i>
+                <h1>SmartIVR <span>CRM</span></h1>
+            </div>
+            <div class="header-actions">
+                <a href="/logs" class="btn btn-secondary">
+                    <i class="fas fa-list-ul"></i> Loglar
+                </a>
+                <button id="openModal" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Müşteri Ekle
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <section class="stats">
+                <div class="stat-card">
+                    <i class="fas fa-users"></i>
+                    <div class="stat-info">
+                        <h3>Toplam Müşteri</h3>
+                        <p id="totalCustomers">0</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-route"></i>
+                    <div class="stat-info">
+                        <h3>Akıllı Yönlendirme</h3>
+                        <p>Aktif</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="customer-list">
+                <div class="section-header">
+                    <h2>Müşteri Rehberi</h2>
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="search" placeholder="İsim veya telefon ara...">
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Ad Soyad</th>
+                                <th>Telefon</th>
+                                <th>E-posta</th>
+                                <th>Şirket</th>
+                                <th>İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customerTableBody">
+                            <!-- Customers will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal -->
+    <div id="customerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Yeni Müşteri Kaydı</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="addCustomerForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="first_name">Ad</label>
+                        <input type="text" id="first_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="last_name">Soyad</label>
+                        <input type="text" id="last_name" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="phone">Telefon Numarası</label>
+                    <input type="tel" id="phone" placeholder="905xxxxxxxxx" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">E-posta</label>
+                    <input type="email" id="email">
+                </div>
+                <div class="form-group">
+                    <label for="company_name">Şirket Adı</label>
+                    <input type="text" id="company_name">
+                </div>
+                <button type="submit" class="btn btn-block">Kaydet</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const modal = document.getElementById('customerModal');
+            const openBtn = document.getElementById('openModal');
+            const closeBtn = document.querySelector('.close');
+            
+            const form = document.getElementById('addCustomerForm');
+            const tableBody = document.getElementById('customerTableBody');
+            const searchInput = document.getElementById('search');
+
+            // Load customers
+            const loadCustomers = async () => {
+                const response = await fetch('/api/customers');
+                const customers = await response.json();
+                renderTable(customers);
+                document.getElementById('totalCustomers').textContent = customers.length;
+            };
+
+            const renderTable = (customers) => {
+                tableBody.innerHTML = '';
+                customers.forEach(customer => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${customer.first_name} ${customer.last_name}</td>
+                        <td>${customer.phone}</td>
+                        <td>${customer.email || '-'}</td>
+                        <td>${customer.company_name || '-'}</td>
+                        <td>
+                            <button class="btn-delete" onclick="deleteCustomer(${customer.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            };
+
+            // Modal logic
+            openBtn.onclick = () => modal.style.display = 'block';
+            closeBtn.onclick = () => modal.style.display = 'none';
+            
+            window.onclick = (event) => {
+                if (event.target == modal) modal.style.display = 'none';
+            };
+
+            // Add customer
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                const customerData = {
+                    first_name: document.getElementById('first_name').value,
+                    last_name: document.getElementById('last_name').value,
+                    phone: document.getElementById('phone').value,
+                    email: document.getElementById('email').value,
+                    company_name: document.getElementById('company_name').value
+                };
+
+                const response = await fetch('/api/customers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(customerData)
+                });
+
+                if (response.ok) {
+                    form.reset();
+                    modal.style.display = 'none';
+                    loadCustomers();
+                } else {
+                    const data = await response.json();
+                    alert('Hata: ' + data.error);
+                }
+            };
+
+            // Delete customer
+            window.deleteCustomer = async (id) => {
+                if (confirm('Bu müşteriyi silmek istediğinize emin misiniz?')) {
+                    await fetch(`/api/customers/${id}`, { method: 'DELETE' });
+                    loadCustomers();
+                }
+            };
+
+            // Search filter
+            searchInput.oninput = (e) => {
+                const term = e.target.value.toLowerCase();
+                const rows = tableBody.querySelectorAll('tr');
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(term) ? '' : 'none';
+                });
+            };
+
+            loadCustomers();
+        });
+    </script>
+</body>
+</html>

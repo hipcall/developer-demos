@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  smart-ivr-crm:
+    build: .
+    ports:
+      - "5008:5008"
+    volumes:
+      - ./data:/app/data
+    restart: always
