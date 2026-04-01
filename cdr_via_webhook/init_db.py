@@ -22,6 +22,7 @@ def init_db():
             started_at TEXT,
             ended_at TEXT,
             record_url TEXT,
+            local_record_path TEXT,
             hangup_by TEXT,
             raw_payload TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

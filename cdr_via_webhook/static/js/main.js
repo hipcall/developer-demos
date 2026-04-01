@@ -18,19 +18,19 @@ function renderTable(cdrs) {
     body.innerHTML = '';
 
     if (cdrs.length === 0) {
-        body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px;">Kayıt bulunamadı.</td></tr>';
+        body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px;">No records found.</td></tr>';
         return;
     }
 
     cdrs.forEach(cdr => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><span class="direction-tag ${cdr.direction}">${cdr.direction === 'inbound' ? 'Gelen' : 'Giden'}</span></td>
+            <td><span class="direction-tag ${cdr.direction}">${cdr.direction === 'inbound' ? 'Inbound' : 'Outbound'}</span></td>
             <td>${cdr.caller_number || '-'}</td>
             <td>${cdr.callee_number || '-'}</td>
             <td>${formatDuration(cdr.duration)}</td>
             <td>${formatDate(cdr.started_at)}</td>
-            <td><button class="btn-details" onclick="showDetails('${cdr.uuid}')">Ayrıntılar</button></td>
+            <td><button class="btn-details" onclick="showDetails('${cdr.uuid}')">Details</button></td>
         `;
         body.appendChild(tr);
     });
@@ -65,7 +65,7 @@ async function showDetails(uuid) {
         document.getElementById('detail-uuid').innerText = cdr.uuid;
         document.getElementById('detail-caller').innerText = cdr.caller_number || '-';
         document.getElementById('detail-callee').innerText = cdr.callee_number || '-';
-        document.getElementById('detail-direction').innerText = cdr.direction === 'inbound' ? 'Gelen' : 'Giden';
+        document.getElementById('detail-direction').innerText = cdr.direction === 'inbound' ? 'Inbound' : 'Outbound';
         document.getElementById('detail-duration').innerText = formatDuration(cdr.duration);
         document.getElementById('detail-start').innerText = formatDate(cdr.started_at);
         document.getElementById('detail-end').innerText = formatDate(cdr.ended_at);
@@ -81,9 +81,10 @@ async function showDetails(uuid) {
         const playerContainer = document.getElementById('record-player-container');
         const audio = document.getElementById('detail-audio');
 
-        if (cdr.record_url) {
+        const audioSrc = cdr.local_record_path || cdr.record_url;
+        if (audioSrc) {
             playerContainer.style.display = 'block';
-            audio.src = cdr.record_url;
+            audio.src = audioSrc;
         } else {
             playerContainer.style.display = 'none';
         }
