@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hipcall Insight Card</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo"><i class="fas fa-id-card-clip"></i> Insight Card</div>
+            <nav>
+                <ul>
+                    <li class="active" data-section="contacts">
+                        <a><i class="fas fa-address-book"></i> Contacts</a>
+                    </li>
+                    <li data-section="logs">
+                        <a><i class="fas fa-list-check"></i> Card Logs</a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">Hipcall Insight Card Demo v1.0</div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header">
+                <div class="page-title">
+                    <h1 id="pageTitle">Contacts</h1>
+                    <p id="pageDesc">Manage contacts for Insight Card matching</p>
+                </div>
+            </header>
+
+            <div class="content-wrapper">
+                <!-- Contacts Section -->
+                <div class="section active" id="section-contacts">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h2>Contact List</h2>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Phone Number</label>
+                                <input type="text" id="newPhone" placeholder="905xx...">
+                            </div>
+                            <div class="form-group">
+                                <label>Full Name</label>
+                                <input type="text" id="newName" placeholder="Ad Soyad">
+                            </div>
+                            <div class="form-group">
+                                <label>Company</label>
+                                <input type="text" id="newCompany" placeholder="Firma">
+                            </div>
+                            <div class="form-group">
+                                <label>Balance (TL)</label>
+                                <input type="text" id="newBalance" placeholder="0.00">
+                            </div>
+                            <button class="btn btn-primary" onclick="addContact()" style="height:42px;">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        </div>
+
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Phone</th>
+                                    <th>Name</th>
+                                    <th>Company</th>
+                                    <th>Balance</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contactsTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Logs Section -->
+                <div class="section" id="section-logs">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon sent"><i class="fas fa-paper-plane"></i></div>
+                            <div class="stat-info">
+                                <h3>Cards Sent</h3>
+                                <p id="statSent">0</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon failed"><i class="fas fa-circle-exclamation"></i></div>
+                            <div class="stat-info">
+                                <h3>Failed</h3>
+                                <p id="statFailed">0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h2>Recent Cards</h2>
+                            <button class="btn btn-outline" onclick="fetchLogs()"><i class="fas fa-arrows-rotate"></i> Refresh</button>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Call ID</th>
+                                    <th>Caller</th>
+                                    <th>Name</th>
+                                    <th>Company</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logsTable">
+                                <tr><td colspan="6" class="empty">No card logs yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // --- Navigation ---
+        document.querySelectorAll('.sidebar nav ul li').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.sidebar nav ul li').forEach(i => i.classList.remove('active'));
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                item.classList.add('active');
+                const section = item.dataset.section;
+                document.getElementById(`section-${section}`).classList.add('active');
+
+                const titles = {
+                    contacts: ['Contacts', 'Manage contacts for Insight Card matching'],
+                    logs: ['Card Logs', 'History of sent Insight Cards']
+                };
+                document.getElementById('pageTitle').textContent = titles[section][0];
+                document.getElementById('pageDesc').textContent = titles[section][1];
+
+                if (section === 'contacts') fetchContacts();
+                if (section === 'logs') fetchLogs();
+            });
+        });
+
+        // --- Contacts ---
+        async function fetchContacts() {
+            const res = await fetch('/api/contacts');
+            const contacts = await res.json();
+            const tbody = document.getElementById('contactsTable');
+            if (!contacts.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty">No contacts yet.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = contacts.map(c => `
+                <tr>
+                    <td>${c.phone_number}</td>
+                    <td>${c.full_name}</td>
+                    <td>${c.company}</td>
+                    <td class="mono">${c.balance} TL</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" onclick="deleteContact(${c.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function addContact() {
+            const phone = document.getElementById('newPhone').value.trim();
+            const name = document.getElementById('newName').value.trim();
+            const company = document.getElementById('newCompany').value.trim();
+            const balance = document.getElementById('newBalance').value.trim() || '0.00';
+
+            if (!phone || !name || !company) {
+                showToast('Fields phone, name, and company are required', 'error');
+                return;
+            }
+
+            const res = await fetch('/api/contacts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone_number: phone, full_name: name, company: company, balance: balance })
+            });
+
+            if (res.ok) {
+                document.getElementById('newPhone').value = '';
+                document.getElementById('newName').value = '';
+                document.getElementById('newCompany').value = '';
+                document.getElementById('newBalance').value = '';
+                showToast('Contact added', 'success');
+                fetchContacts();
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'Error', 'error');
+            }
+        }
+
+        async function deleteContact(id) {
+            await fetch(`/api/contacts/${id}`, { method: 'DELETE' });
+            showToast('Contact deleted', 'success');
+            fetchContacts();
+        }
+
+        // --- Logs ---
+        async function fetchLogs() {
+            const res = await fetch('/api/logs');
+            const logs = await res.json();
+
+            document.getElementById('statSent').textContent = logs.filter(l => l.status === 'sent').length;
+            document.getElementById('statFailed').textContent = logs.filter(l => l.status === 'failed').length;
+
+            const tbody = document.getElementById('logsTable');
+            if (!logs.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty">No card logs yet.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = logs.map(l => `
+                <tr>
+                    <td class="mono">${l.call_id}</td>
+                    <td>${l.caller_number}</td>
+                    <td>${l.contact_name}</td>
+                    <td>${l.contact_company}</td>
+                    <td><span class="status-tag ${l.status}">${l.status}</span></td>
+                    <td>${new Date(l.created_at).toLocaleString('tr-TR')}</td>
+                </tr>
+            `).join('');
+        }
+
+        // --- Toast ---
+        function showToast(msg, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // --- Init ---
+        fetchContacts();
+    </script>
+</body>
+</html>

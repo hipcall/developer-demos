@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  insight-card:
+    build: .
+    ports:
+      - "5009:5009"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - PORT=5009
+      - HIPCALL_API_TOKEN=${HIPCALL_API_TOKEN}
+    restart: always
