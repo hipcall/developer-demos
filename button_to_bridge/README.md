@@ -2,20 +2,19 @@
 
 This is a **dummy application** designed to demonstrate how Hipcall's **Button to Bridge** feature works. A call button on a customer record triggers the Hipcall API, which first rings the agent's extension and then bridges the agent to the customer once answered.
 
-> [!IMPORTANT]
-> This is a **dummy program** designed for demonstration purposes. It uses a specific scenario to show how a CRM can initiate outbound calls through Hipcall with a single button click.
-
 ---
+
 
 ## 📖 The Scenario: Click-to-Call CRM
 
-In this scenario, a user views a customer list and initiates a call directly from the browser:
 
-1. The user clicks the **Call** button next to a customer.
+In this scenario, a support agent views a customer list and initiates a call directly from the browser:
+
+1. The agent clicks the **Call** button next to a customer.
 2. The frontend sends the customer's phone number to the Flask backend.
 3. The backend calls the **Hipcall API** using the configured user ID.
-4. Hipcall **rings the user's phone/app first**.
-5. Once the user answers, Hipcall **bridges the call** to the customer.
+4. Hipcall **rings the agent's phone/app first**.
+5. Once the agent answers, Hipcall **bridges the call** to the customer.
 
 ---
 
@@ -56,11 +55,9 @@ Navigate to **Hipcall → Settings → Users**, click on the relevant extension,
 
 ```
 Example: https://app.hipcall.com/settings/users/3508/edit
-                                                    ^^^^
-                                               This is the User ID
+
 ```
 
-Set this value directly in `app.py`:
 
 ```python
 HIPCALL_USER_ID = "3508"
