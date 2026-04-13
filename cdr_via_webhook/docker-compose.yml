@@ -9,4 +9,5 @@ services:
       - ./data:/app/data
     environment:
       - PORT=5007
+      - HIPCALL_API_TOKEN=${HIPCALL_API_TOKEN}
     restart: always

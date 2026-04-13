@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickBite Courier | Order Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-motorcycle"></i>
+                <div style="display: flex; flex-direction: column;">
+                    <span style="line-height: 1;">QuickBite</span>
+                    <small style="font-size: 0.7rem; font-weight: 300; opacity: 0.8; margin-top: 4px;">Courier
+                        Dashboard</small>
+                </div>
+            </div>
+            <nav>
+                <ul>
+                    <li class="active">
+                        <a href="/"><i class="fas fa-box"></i> Orders</a>
+                    </li>
+                    <li>
+                        <a href="/logs"><i class="fas fa-scroll"></i> Logs</a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <p>Dummy App v1.0</p>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="content-wrapper">
+                <div class="page-title">
+                    <h1>Order Management</h1>
+                    <p>Manage customer orders for Hipcall Speed Dial integration.</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon orders">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Total Orders</h3>
+                            <p id="stat-total">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon customers">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Customers</h3>
+                            <p id="stat-customers">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon recent">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Latest Order</h3>
+                            <p id="stat-latest" style="font-size: 1rem;">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <h2>Orders</h2>
+                        <div class="actions">
+                            <button class="btn btn-secondary" onclick="fetchOrders()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                            <button class="btn btn-primary" onclick="openModal()">
+                                <i class="fas fa-plus"></i> New Order
+                            </button>
+                        </div>
+                    </div>
+                    <table class="orders-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Order Code</th>
+                                <th>Customer</th>
+                                <th>Phone</th>
+                                <th>Created At</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- New Order Modal -->
+    <div id="order-modal" class="modal-overlay">
+        <div class="modal-box">
+            <button class="close" onclick="closeModal()">&times;</button>
+            <h2><i class="fas fa-plus-circle" style="color: var(--primary);"></i> New Order</h2>
+
+            <div id="modal-alert" class="alert"></div>
+
+            <form id="order-form" onsubmit="submitOrder(event)">
+                <div class="form-group">
+                    <label for="first_name">First Name</label>
+                    <input type="text" id="first_name" name="first_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="last_name">Last Name</label>
+                    <input type="text" id="last_name" name="last_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="text" id="phone" name="phone" placeholder="905XXXXXXXXX" required>
+                </div>
+                <div class="form-group">
+                    <label for="order_code">Order Code (4 digits)</label>
+                    <input type="text" id="order_code" name="order_code" placeholder="e.g. 1001" required
+                        maxlength="4" pattern="\d{4}" inputmode="numeric">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+
+</html>

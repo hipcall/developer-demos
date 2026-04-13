@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Click-to-Call Customer CRM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-box {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 500px;
+            position: relative;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .modal-box .close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .form-group select, .form-group input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            font-family: inherit;
+        }
+        .form-actions {
+            margin-top: 24px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        .actions-flex {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-secondary {
+            background-color: var(--secondary);
+            color: var(--text-main);
+        }
+        .btn-secondary:hover {
+            background-color: var(--secondary-hover);
+        }
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-headset"></i>
+                <div style="display: flex; flex-direction: column;">
+                    <span style="line-height: 1;">Smart CRM</span>
+                    <small style="font-size: 0.7rem; font-weight: 300; opacity: 0.8; margin-top: 4px;">Click-to-Call Demo</small>
+                </div>
+            </div>
+            <nav>
+                <ul>
+                    <li class="active">
+                        <a href="/"><i class="fas fa-address-book"></i> Customers</a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <p>Dummy App v2.0</p>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="content-wrapper">
+                <div class="page-title">
+                    <h1>Customer List</h1>
+                    <p>Click "Call" to initiate a call via Hipcall.</p>
+                </div>
+
+                <div id="alert-container"></div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <h2>Recent Customers</h2>
+                        <button class="btn btn-primary" onclick="openModal()">
+                            <i class="fas fa-plus"></i> Add Customer
+                        </button>
+                    </div>
+                    <table class="customers-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Department</th>
+                                <th>Phone Number</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customers-body">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="customer-modal" class="modal-overlay">
+        <div class="modal-box">
+            <button class="close" onclick="closeModal()">&times;</button>
+            <h2 id="modal-title" style="margin-bottom: 24px;"><i class="fas fa-user-plus"></i> Add Customer</h2>
+            
+            <form id="customer-form" onsubmit="submitCustomer(event)">
+                <input type="hidden" id="customer_id" value="">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="name" required placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label>Department</label>
+                    <select id="department" required>
+                        <option value="Support">Support</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="text" id="phone" required placeholder="+905XXXXXXXXX">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+
+</html>

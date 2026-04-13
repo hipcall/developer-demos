@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  call-via-order-number:
+    build: .
+    ports:
+      - "5010:5010"
+    volumes:
+      - ./data:/app/data
+    restart: always
