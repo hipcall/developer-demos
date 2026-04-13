@@ -12,13 +12,13 @@ DB_PATH = './data/crm.db'
 # --- AUTHENTICATION ---
 
 def check_auth(username, password):
-    """Kullanıcı adı ve şifreyi kontrol eder."""
+    """Check username and password."""
     return username == 'admin' and password == 'admin123'
 
 def authenticate():
-    """401 Unauthorized yanıtı döndürür."""
+    """Return a 401 Unauthorized response."""
     return Response(
-        'Kimlik doğrulama gerekli.', 401,
+        'Authentication required.', 401,
         {'WWW-Authenticate': 'Basic realm="Login Required"'}
     )
 
@@ -62,7 +62,7 @@ def smart_ivr():
     if not data:
         data = {} # Ensure it's a dict for logging
     
-    print(f"--- Gelen İstek: {data}")
+    print(f"--- Incoming Request: {data}")
     
     caller = data.get('caller')
     
@@ -76,14 +76,18 @@ def smart_ivr():
         
         conn = get_db_connection()
         customer = conn.execute(
-            'SELECT id FROM customers WHERE phone = ?', 
+            'SELECT id, has_debt FROM customers WHERE phone = ?', 
             (normalized_caller,)
         ).fetchone()
         conn.close()
         
         if customer:
-            res = {"extension": "1093"}
-            print(f"--- Yanıt (Kayıtlı): {res}")
+            if customer['has_debt'] == 1:
+                res = {"extension": "1093"}
+                print(f"--- Yanıt (Kayıtlı ve Borcu Var): {res}")
+            else:
+                res = {"extension": "1094"}
+                print(f"--- Yanıt (Kayıtlı ama Borcu Yok): {res}")
         else:
             print(f"--- Yanıt (Kayıt Bulunamadı): {res}")
     
@@ -139,6 +143,7 @@ def add_customer():
     phone = normalize_phone(data.get('phone'))
     email = data.get('email')
     company_name = data.get('company_name')
+    has_debt = int(data.get('has_debt', 0)) # Default to 0
     
     if not first_name or not last_name or not phone:
         return jsonify({"error": "Missing required fields"}), 400
@@ -146,8 +151,8 @@ def add_customer():
     try:
         conn = get_db_connection()
         conn.execute(
-            'INSERT INTO customers (first_name, last_name, phone, email, company_name) VALUES (?, ?, ?, ?, ?)',
-            (first_name, last_name, phone, email, company_name)
+            'INSERT INTO customers (first_name, last_name, phone, email, company_name, has_debt) VALUES (?, ?, ?, ?, ?, ?)',
+            (first_name, last_name, phone, email, company_name, has_debt)
         )
         conn.commit()
         conn.close()
@@ -163,6 +168,32 @@ def delete_customer(id):
     conn.commit()
     conn.close()
     return jsonify({"status": "success"}), 200
+
+@app.route('/api/customers/<int:id>', methods=['PUT'])
+@requires_auth
+def update_customer(id):
+    data = request.json
+    first_name = data.get('first_name')
+    last_name = data.get('last_name')
+    phone = normalize_phone(data.get('phone'))
+    email = data.get('email')
+    company_name = data.get('company_name')
+    has_debt = int(data.get('has_debt', 0))
+
+    if not first_name or not last_name or not phone:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    try:
+        conn = get_db_connection()
+        conn.execute(
+            'UPDATE customers SET first_name=?, last_name=?, phone=?, email=?, company_name=?, has_debt=? WHERE id=?',
+            (first_name, last_name, phone, email, company_name, has_debt, id)
+        )
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "success"}), 200
+    except sqlite3.IntegrityError:
+        return jsonify({"error": "Phone number already exists"}), 400
 
 # --- FRONTEND ROUTES ---
 

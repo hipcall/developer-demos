@@ -2,6 +2,10 @@
 
 This is a **dummy application** designed to demonstrate how to integrate Hipcall's Smart IVR feature with an external web service. It serves as a reference implementation for developers looking to route incoming calls based on CRM data dynamically.
 
+This application scenarios the smart routing of a **Hipcall-registered number** as a Smart IVR, driven by data obtained from a third-party system via web services. If a debt record is found for the customer, the call is routed to the support team; otherwise, it is directed to the sales team. The debt information is retrieved from a third-party system and is not stored within **Hipcall**.
+
+For this scenario, extensions have been created and tested in the Hipcall account for the relevant number. Extension 1093 is assigned to Support, and extension 1094 is assigned to Sales. When using the application on your own system, please configure the extensions in **Hipcall** according to how you want your number to be routed.
+
 ## 📋 Overview
 
 The goal of this project is to show the end-to-end flow of a Smart IVR webhook integration:
@@ -12,11 +16,13 @@ The goal of this project is to show the end-to-end flow of a Smart IVR webhook i
 5.  If not found, it responds with a different routing instruction (e.g., {"extension": "1094"}).
 6.  A **Simple Dashboard** allows managing customers and viewing webhook request logs.
 
+
+
 ## 🛠️ Setup Instructions
 
 ### 1. Prerequisites
 - Python 3.8+
-- [ngrok](https://ngrok.com/) (required for receiving webhooks on a local machine)
+- [ngrok](https://ngrok.com/) 
 
 ### 2. Installation
 ```bash
@@ -47,7 +53,7 @@ Since Hipcall needs a public URL to communicate with your Smart IVR service, use
 
 ## 🔗 Hipcall Configuration
 
-At Hipcall, navigate to **Settings > Phone System > Smart Routing** (Ayarlar > Telefon Sistemi > Akıllı Yönlendirmeler). Click on the **"New"** (Yeni) button and select **"Webservice"** (Webservis) as the route type.
+At Hipcall, navigate to **Settings > Phone System > Smart Routing**. Click on the **"New"** button and select **"Webservice"** as the route type.
 
 In your Hipcall Smart IVR settings, use the following configuration:
 

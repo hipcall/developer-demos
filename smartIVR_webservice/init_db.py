@@ -19,6 +19,7 @@ def init_db():
         phone TEXT NOT NULL UNIQUE,
         email TEXT,
         company_name TEXT,
+        has_debt INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     ''')
@@ -35,14 +36,14 @@ def init_db():
     
     # Add some dummy data
     dummy_data = [
-        ('Ahmet', 'Yılmaz', '905438851111', 'ahmet@example.com', 'Tech Corp'),
-        ('Mehmet', 'Demir', '905001112233', 'mehmet@example.com', 'Demir Lojistik')
+        ('Ahmet', 'Yılmaz', '905438851111', 'ahmet@example.com', 'Tech Corp', 0),
+        ('Mehmet', 'Demir', '905001112233', 'mehmet@example.com', 'Demir Lojistik', 1)
     ]
     
     try:
         cursor.executemany('''
-        INSERT INTO customers (first_name, last_name, phone, email, company_name)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO customers (first_name, last_name, phone, email, company_name, has_debt)
+        VALUES (?, ?, ?, ?, ?, ?)
         ''', dummy_data)
         print("Database initialized with dummy data.")
     except sqlite3.IntegrityError:

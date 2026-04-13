@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  button-to-bridge:
+    build: .
+    ports:
+      - "5011:5011"
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    restart: always
