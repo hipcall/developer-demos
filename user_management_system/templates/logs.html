@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <title>Sistem Logları - Global Bank</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Logs - Global Bank</title>
     <link rel="stylesheet" href="/static/style.css?v=2">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -19,19 +20,18 @@
             <div class="logo-area">
                 <span class="bank-icon">📋</span>
                 <div>
-                    <h1>İşlem Logları</h1>
-                    <span class="subtitle">Sistem İzleme ve API Talepleri</span>
+                    <h1>Transaction Logs</h1>
+                    <span class="subtitle">System Monitoring and API Requests</span>
                 </div>
             </div>
             <div class="header-actions">
-                <a href="/" class="btn btn-secondary">← Panele Dön</a>
-                <button class="btn btn-primary" onclick="fetchLogs()">↻ Yenile</button>
-                <button class="btn btn-delete" style="color: white" onclick="clearLogs()">🗑 Temizle</button>
+                <a href="/" class="btn btn-secondary">← Back to Dashboard</a>
+                <button class="btn btn-primary" onclick="fetchLogs()">↻ Refresh</button>
+                <button class="btn btn-delete" style="color: white" onclick="clearLogs()">🗑 Clear</button>
             </div>
         </header>
 
         <div class="log-area" id="logArea">
-            <!-- Loglar buraya gelecek -->
         </div>
     </div>
 
@@ -40,24 +40,25 @@
             try {
                 const res = await fetch('/api/logs');
                 if (res.status === 401) {
-                    alert("Oturum süresi dolmuş veya yetkiniz yok.");
+                    alert("Session expired or unauthorized access.");
                     return;
                 }
                 const logs = await res.json();
                 renderLogs(logs);
             } catch (err) {
-                console.error("Loglar çekilemedi:", err);
+                console.error("Failed to fetch logs:", err);
             }
         }
 
         async function clearLogs() {
-            if (!confirm("Tüm logları silmek istediğinize emin misiniz?")) return;
+            if (!confirm("Are you sure you want to delete all logs?")) return;
 
             try {
                 await fetch('/api/logs', { method: 'DELETE' });
                 document.getElementById('logArea').innerHTML = '';
+                fetchLogs();
             } catch (err) {
-                console.error("Loglar silinemedi:", err);
+                console.error("Failed to clear logs:", err);
             }
         }
 
@@ -66,7 +67,7 @@
             container.innerHTML = '';
 
             if (logs.length === 0) {
-                container.innerHTML = '<p style="color: #64748b; text-align: center; padding: 2rem;">Henüz log kaydı bulunmuyor.</p>';
+                container.innerHTML = '<p style="color: #64748b; text-align: center; padding: 2rem;">No log records found yet.</p>';
                 return;
             }
 
@@ -95,7 +96,7 @@
                             <span class="log-method">${log.method}</span>
                             <span class="log-path">${log.path}</span>
                         </div>
-                        <span class="log-time">${new Date(log.timestamp).toLocaleString('tr-TR')}</span>
+                        <span class="log-time">${new Date(log.timestamp).toLocaleString('en-US')}</span>
                     </div>
                     <div class="log-bodies">
                         <div class="log-body">

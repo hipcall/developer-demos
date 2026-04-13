@@ -11,6 +11,7 @@ def init_db():
         address TEXT,
         pin_code TEXT,
         phone TEXT,
+        balance REAL DEFAULT 0.0,
         company_name TEXT,
         company_address TEXT,
         username TEXT UNIQUE,

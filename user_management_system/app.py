@@ -13,13 +13,13 @@ DB_PATH = os.environ.get('DB_PATH', './data/database.db')
 # --- AUTHENTICATION ---
 
 def check_auth(username, password):
-    """Kullanıcı adı ve şifreyi kontrol eder."""
+    """Check username and password."""
     return username == 'admin' and password == 'admin123'
 
 def authenticate():
-    """401 Unauthorized yanıtı döndürür."""
+    """Return a 401 Unauthorized response."""
     return Response(
-        'Kimlik doğrulama gerekli.', 401,
+        'Authentication required.', 401,
         {'WWW-Authenticate': 'Basic realm="Login Required"'}
     )
 
@@ -49,13 +49,76 @@ def normalize_phone(phone):
         phone = phone[1:]
     return phone
 
+def number_to_turkish_words(n):
+    if n is None:
+        return "sıfır lira"
+    try:
+        n = float(n)
+    except ValueError:
+        return "sıfır lira"
+        
+    ones = ["", "bir", "iki", "üç", "dört", "beş", "altı", "yedi", "sekiz", "dokuz"]
+    tens = ["", "on", "yirmi", "otuz", "kırk", "elli", "altmış", "yetmiş", "seksen", "doksan"]
+    
+    def read_triplet(num):
+        res = []
+        h = num // 100
+        t = (num % 100) // 10
+        o = num % 10
+        
+        if h == 1:
+            res.append("yüz")
+        elif h > 1:
+            res.append(ones[h] + " yüz")
+            
+        if t > 0:
+            res.append(tens[t])
+            
+        if o > 0:
+            res.append(ones[o])
+            
+        return " ".join(res)
+        
+    int_part = int(n)
+    frac_part = round((n - int_part) * 100)
+    
+    parts = []
+    
+    if int_part == 0:
+        parts.append("sıfır")
+    else:
+        b = int_part // 1000000000
+        m = (int_part % 1000000000) // 1000000
+        k = (int_part % 1000000) // 1000
+        r = int_part % 1000
+        
+        if b > 0:
+            parts.append(read_triplet(b) + " milyar")
+        if m > 0:
+            parts.append(read_triplet(m) + " milyon")
+        if k == 1:
+            parts.append("bin")
+        elif k > 1:
+            parts.append(read_triplet(k) + " bin")
+        if r > 0:
+            parts.append(read_triplet(r))
+            
+    # Temizleme
+    text = " ".join([p for p in " ".join(parts).split() if p]) + " lira"
+    
+    if frac_part > 0:
+        frac_text = " ".join([p for p in read_triplet(frac_part).split() if p])
+        text += f" {frac_text} kuruş"
+        
+    return text.strip()
+
 # --- USER MANAGEMENT APIs ---
 
 @app.route('/api/users', methods=['GET'])
 @requires_auth
 def get_users():
     conn = get_db_connection()
-    users = conn.execute('SELECT id, first_name, last_name, phone, pin_code FROM users').fetchall()
+    users = conn.execute('SELECT id, first_name, last_name, phone, pin_code, balance FROM users').fetchall()
     conn.close()
     return jsonify([dict(u) for u in users])
 
@@ -65,9 +128,14 @@ def add_user():
     data = request.json
     conn = get_db_connection()
     phone = normalize_phone(data.get('phone'))
-    conn.execute("""INSERT INTO users (first_name, last_name, phone, pin_code) 
-                    VALUES (?, ?, ?, ?)""", 
-                 (data.get('first_name'), data.get('last_name'), phone, data.get('pin_code')))
+    
+    balance = data.get('balance')
+    if balance == '' or balance is None:
+        balance = 0.0
+        
+    conn.execute("""INSERT INTO users (first_name, last_name, phone, pin_code, balance) 
+                    VALUES (?, ?, ?, ?, ?)""", 
+                 (data.get('first_name'), data.get('last_name'), phone, data.get('pin_code'), balance))
     conn.commit()
     conn.close()
     return jsonify({'status': 'success'})
@@ -78,9 +146,14 @@ def update_user(user_id):
     data = request.json
     conn = get_db_connection()
     phone = normalize_phone(data.get('phone'))
-    conn.execute("""UPDATE users SET first_name=?, last_name=?, phone=?, pin_code=? 
+    
+    balance = data.get('balance')
+    if balance == '' or balance is None:
+        balance = 0.0
+        
+    conn.execute("""UPDATE users SET first_name=?, last_name=?, phone=?, pin_code=?, balance=? 
                     WHERE id=?""", 
-                 (data.get('first_name'), data.get('last_name'), phone, data.get('pin_code'), user_id))
+                 (data.get('first_name'), data.get('last_name'), phone, data.get('pin_code'), balance, user_id))
     conn.commit()
     conn.close()
     return jsonify({'status': 'success'})
@@ -106,7 +179,7 @@ def log_request_response(response):
             req_body = request.get_data(as_text=True)
             res_body = response.get_data(as_text=True)
             
-            # JSON Validate kontrolü (Body çok büyükse veya binary ise diye)
+            # Truncate body if too large or binary
             if len(req_body) > 5000: req_body = "Body too large"
             if len(res_body) > 5000: res_body = "Body too large"
 
@@ -157,10 +230,10 @@ def hipcall_ingress():
 
     entered_pin = gather_data.get('pin_code')
 
-    # Eğer çağrı yeni başlıyorsa, PIN sor
+    # If the call just started, ask for PIN
     if 'pin_code' not in gather_data:
         return jsonify({
-            "version": "1",
+            "version": "1.0",
             "seq": [
                 {
                     "action": "gather",
@@ -174,15 +247,17 @@ def hipcall_ingress():
             ]
         })
 
-    # PIN girilmişse doğruluğunu kontrol et
+    # If PIN was entered, verify it
     if user and entered_pin == user['pin_code']:
+        balance_text = number_to_turkish_words(user['balance'])
         return jsonify({
-            "version": "1",
+            "version": "1.0",
             "seq": [
                 {
-                    "action": "play",
+                    "action": "say",
                     "args": {
-                        "url": url_for('static', filename='audio/pin_basarili.mp3', _external=True)
+                        "text": f"Hoşgeldiniz {user['first_name']} {user['last_name']}. Şu anda {balance_text} bakiyeniz bulunmaktadır. Sizi satış temsilcisine aktarıyorum.",
+                        "language": "tr-TR"
                     }
                 },
                 {
@@ -195,7 +270,7 @@ def hipcall_ingress():
         })
     else:
         return jsonify({
-            "version": "1",
+            "version": "1.0",
             "seq": [
                 {
                     "action": "play",
