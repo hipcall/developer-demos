@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
@@ -26,10 +26,10 @@
             <nav>
                 <ul>
                     <li>
-                        <a href="/"><i class="fas fa-box"></i> Orders</a>
+                        <a href="./"><i class="fas fa-box"></i> Orders</a>
                     </li>
                     <li class="active">
-                        <a href="/logs"><i class="fas fa-scroll"></i> Logs</a>
+                        <a href="logs"><i class="fas fa-scroll"></i> Logs</a>
                     </li>
                 </ul>
             </nav>
@@ -68,7 +68,7 @@
     <script>
         async function fetchLogs() {
             try {
-                const res = await fetch('/api/logs');
+                const res = await fetch('api/logs');
                 const logs = await res.json();
                 renderLogs(logs);
             } catch (err) {
@@ -79,7 +79,7 @@
         async function clearLogs() {
             if (!confirm('Are you sure you want to delete all logs?')) return;
             try {
-                await fetch('/api/logs', { method: 'DELETE' });
+                await fetch('api/logs', { method: 'DELETE' });
                 fetchLogs();
             } catch (err) {
                 console.error('Failed to clear logs:', err);

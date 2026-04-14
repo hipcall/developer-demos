@@ -4,7 +4,7 @@ let lastLogId = 0;
 // Poll for logs every 2 seconds
 async function fetchLogs() {
     try {
-        const response = await fetch('/api/logs?last_id=' + lastLogId);
+        const response = await fetch('api/logs?last_id=' + lastLogId);
         const data = await response.json();
         
         if (data.logs && data.logs.length > 0) {
@@ -77,7 +77,7 @@ document.getElementById('scenarioList').addEventListener('click', async (e) => {
     
     // Notify Backend
     try {
-        await fetch('/api/active-scenario', {
+        await fetch('api/active-scenario', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ scenario: currentScenario })

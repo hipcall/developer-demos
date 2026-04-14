@@ -2,7 +2,7 @@ let allCDRs = [];
 
 async function fetchCDRs() {
     try {
-        const response = await fetch('/api/cdrs');
+        const response = await fetch('api/cdrs');
         allCDRs = await response.json();
 
         renderTable(allCDRs);
@@ -59,7 +59,7 @@ function updateStats(cdrs) {
 
 async function showDetails(uuid) {
     try {
-        const response = await fetch(`/api/cdrs/${uuid}`);
+        const response = await fetch(`api/cdrs/${uuid}`);
         const cdr = await response.json();
 
         document.getElementById('detail-uuid').innerText = cdr.uuid;

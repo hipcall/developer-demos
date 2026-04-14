@@ -2,7 +2,7 @@ let allOrders = [];
 
 async function fetchOrders() {
     try {
-        const res = await fetch('/api/orders');
+        const res = await fetch('api/orders');
         allOrders = await res.json();
         renderTable(allOrders);
         updateStats(allOrders);
@@ -102,7 +102,7 @@ async function submitOrder(e) {
     }
 
     try {
-        const res = await fetch('/api/orders', {
+        const res = await fetch('api/orders', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -125,7 +125,7 @@ async function deleteOrder(id) {
     if (!confirm('Are you sure you want to delete this order?')) return;
 
     try {
-        await fetch(`/api/orders/${id}`, { method: 'DELETE' });
+        await fetch(`api/orders/${id}`, { method: 'DELETE' });
         fetchOrders();
     } catch (err) {
         console.error('Failed to delete order:', err);

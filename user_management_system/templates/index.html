@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bank - Call Center Demo</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="static/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 
@@ -30,7 +30,7 @@
                     <option value="tr">Türkçe</option>
                 </select>
                 <button class="btn btn-primary" onclick="openModal()" data-i18n="addNew">+ Add New</button>
-                <a href="/logs" class="btn btn-secondary" data-i18n="logs">📋 Transaction Logs</a>
+                <a href="logs" class="btn btn-secondary" data-i18n="logs">📋 Transaction Logs</a>
             </div>
         </header>
 
@@ -144,7 +144,7 @@
 
         async function fetchUsers() {
             try {
-                const res = await fetch('/api/users');
+                const res = await fetch('api/users');
                 const users = await res.json();
                 const tbody = document.querySelector('#userTable tbody');
                 tbody.innerHTML = '';
@@ -202,7 +202,7 @@
 
         async function deleteUser(id) {
             if (!confirm(t('errDel'))) return;
-            await fetch(`/api/users/${id}`, { method: 'DELETE' });
+            await fetch(`api/users/${id}`, { method: 'DELETE' });
             fetchUsers();
         }
 
@@ -218,7 +218,7 @@
             };
 
             const method = id ? 'PUT' : 'POST';
-            const url = id ? `/api/users/${id}` : '/api/users';
+            const url = id ? `api/users/${id}` : 'api/users';
 
             try {
                 const response = await fetch(url, {

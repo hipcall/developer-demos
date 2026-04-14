@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', fetchCustomers);
 
 async function fetchCustomers() {
     try {
-        const response = await fetch('/api/customers');
+        const response = await fetch('api/customers');
         const data = await response.json();
         
         const tbody = document.getElementById('customers-body');
@@ -75,7 +75,7 @@ async function initiateCall(phoneNumber, buttonElement) {
     buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
     try {
-        const response = await fetch('/api/call', {
+        const response = await fetch('api/call', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ callee_number: phoneNumber })
@@ -142,7 +142,7 @@ async function submitCustomer(e) {
     const phone = document.getElementById('phone').value;
     
     let method = id ? 'PUT' : 'POST';
-    let url = id ? `/api/customers/${id}` : '/api/customers';
+    let url = id ? `api/customers/${id}` : 'api/customers';
     
     try {
         const res = await fetch(url, {
@@ -168,7 +168,7 @@ async function submitCustomer(e) {
 async function deleteCustomer(id) {
     if(!confirm("Are you sure you want to delete this customer?")) return;
     try {
-        const res = await fetch(`/api/customers/${id}`, { method: 'DELETE' });
+        const res = await fetch(`api/customers/${id}`, { method: 'DELETE' });
         if(res.ok) {
             showAlert('Customer deleted', 'success');
             fetchCustomers();

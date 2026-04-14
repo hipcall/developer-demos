@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SmartIVR CRM Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="static/css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -18,7 +18,7 @@
                 <h1>SmartIVR <span>CRM</span></h1>
             </div>
             <div class="header-actions">
-                <a href="/logs" class="btn btn-secondary">
+                <a href="logs" class="btn btn-secondary">
                     <i class="fas fa-list-ul"></i> Logs
                 </a>
                 <button id="openModal" class="btn btn-primary">
@@ -173,7 +173,7 @@
 
             // Load customers
             const loadCustomers = async () => {
-                const response = await fetch('/api/customers');
+                const response = await fetch('api/customers');
                 const customers = await response.json();
                 renderTable(customers);
                 document.getElementById('totalCustomers').textContent = customers.length;
@@ -230,7 +230,7 @@
                     has_debt: document.getElementById('has_debt').value
                 };
 
-                const response = await fetch('/api/customers', {
+                const response = await fetch('api/customers', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(customerData)
@@ -271,7 +271,7 @@
                     has_debt: document.getElementById('edit_has_debt').value
                 };
 
-                const response = await fetch(`/api/customers/${id}`, {
+                const response = await fetch(`api/customers/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(customerData)
@@ -289,7 +289,7 @@
             // Delete customer
             window.deleteCustomer = async (id) => {
                 if (confirm('Are you sure you want to delete this customer?')) {
-                    await fetch(`/api/customers/${id}`, { method: 'DELETE' });
+                    await fetch(`api/customers/${id}`, { method: 'DELETE' });
                     loadCustomers();
                 }
             };
