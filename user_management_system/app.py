@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, url_for
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import sqlite3
 import os
@@ -8,6 +8,7 @@ app = Flask(__name__, static_folder='static', template_folder='templates')
 CORS(app)
 
 DB_PATH = os.environ.get('DB_PATH', './data/database.db')
+PUBLIC_BASE_URL = os.environ.get('PUBLIC_BASE_URL', '')
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -47,7 +48,7 @@ def number_to_turkish_words(n):
             res.append("yüz")
         elif h > 1:
             res.append(ones[h] + " yüz")
-            
+        
         if t > 0:
             res.append(tens[t])
             
@@ -140,8 +141,6 @@ def delete_user(user_id):
     conn.close()
     return jsonify({'status': 'success'})
 
-# Settings APIs removed.
-
 # --- LOGGING ---
 
 @app.after_request
@@ -211,7 +210,7 @@ def hipcall_ingress():
                     "args": {
                         "min_digits": 1,
                         "max_digits": 4,
-                        "ask": url_for('static', filename='audio/pin_karsilama.mp3', _external=True),
+                        "ask": f"{PUBLIC_BASE_URL}/static/audio/pin_karsilama.mp3",
                         "variable_name": "pin_code"
                     }
                 }
@@ -246,7 +245,7 @@ def hipcall_ingress():
                 {
                     "action": "play",
                     "args": {
-                        "url": url_for('static', filename='audio/pin_basarisiz1.mp3', _external=True)
+                        "url": f"{PUBLIC_BASE_URL}/static/audio/pin_basarisiz1.mp3"
                     }
                 },
                 {
@@ -257,13 +256,12 @@ def hipcall_ingress():
                 }
             ]
         })
+
 # --- FRONTEND ROUTE ---
 
 @app.route('/')
 def index():
     return render_template('index.html')
-
- 
 
 @app.route('/logs')
 def logs():
