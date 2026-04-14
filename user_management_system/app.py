@@ -1,36 +1,13 @@
-from flask import Flask, request, jsonify, render_template, url_for, Response
+from flask import Flask, request, jsonify, render_template, url_for
 from flask_cors import CORS
 import sqlite3
 import os
 import json
-from functools import wraps
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 CORS(app)
 
 DB_PATH = os.environ.get('DB_PATH', './data/database.db')
-
-# --- AUTHENTICATION ---
-
-def check_auth(username, password):
-    """Check username and password."""
-    return username == 'admin' and password == 'admin123'
-
-def authenticate():
-    """Return a 401 Unauthorized response."""
-    return Response(
-        'Authentication required.', 401,
-        {'WWW-Authenticate': 'Basic realm="Login Required"'}
-    )
-
-def requires_auth(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        auth = request.authorization
-        if not auth or not check_auth(auth.username, auth.password):
-            return authenticate()
-        return f(*args, **kwargs)
-    return decorated
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -115,7 +92,6 @@ def number_to_turkish_words(n):
 # --- USER MANAGEMENT APIs ---
 
 @app.route('/api/users', methods=['GET'])
-@requires_auth
 def get_users():
     conn = get_db_connection()
     users = conn.execute('SELECT id, first_name, last_name, phone, pin_code, balance FROM users').fetchall()
@@ -123,7 +99,6 @@ def get_users():
     return jsonify([dict(u) for u in users])
 
 @app.route('/api/users', methods=['POST'])
-@requires_auth
 def add_user():
     data = request.json
     conn = get_db_connection()
@@ -141,7 +116,6 @@ def add_user():
     return jsonify({'status': 'success'})
 
 @app.route('/api/users/<int:user_id>', methods=['PUT'])
-@requires_auth
 def update_user(user_id):
     data = request.json
     conn = get_db_connection()
@@ -159,7 +133,6 @@ def update_user(user_id):
     return jsonify({'status': 'success'})
 
 @app.route('/api/users/<int:user_id>', methods=['DELETE'])
-@requires_auth
 def delete_user(user_id):
     conn = get_db_connection()
     conn.execute('DELETE FROM users WHERE id=?', (user_id,))
@@ -196,7 +169,6 @@ def log_request_response(response):
     return response
 
 @app.route('/api/logs', methods=['GET'])
-@requires_auth
 def get_logs():
     conn = get_db_connection()
     logs = conn.execute("SELECT id, timestamp, method, path, request_body, response_body FROM logs ORDER BY id DESC LIMIT 50").fetchall()
@@ -204,7 +176,6 @@ def get_logs():
     return jsonify([dict(l) for l in logs])
 
 @app.route('/api/logs', methods=['DELETE'])
-@requires_auth
 def delete_logs():
     conn = get_db_connection()
     conn.execute("DELETE FROM logs")
@@ -289,14 +260,12 @@ def hipcall_ingress():
 # --- FRONTEND ROUTE ---
 
 @app.route('/')
-@requires_auth
 def index():
     return render_template('index.html')
 
  
 
 @app.route('/logs')
-@requires_auth
 def logs():
     return render_template('logs.html')
 
