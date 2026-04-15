@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartIVR Call Logs</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-list-ul"></i>
+                <h1>SmartIVR <span>Logs</span></h1>
+            </div>
+            <div class="header-actions">
+                <a href="/" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Go Back
+                </a>
+                <button id="clearLogs" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Clear All
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <div id="logsContainer" class="standalone-logs-list">
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const logsContainer = document.getElementById('logsContainer');
+            const clearLogsBtn = document.getElementById('clearLogs');
+
+            // Load logs
+            const loadLogs = async () => {
+                const response = await fetch('/api/logs');
+                const logs = await response.json();
+                renderLogs(logs);
+            };
+
+            const renderLogs = (logs) => {
+                if (logs.length === 0) {
+                    logsContainer.innerHTML = '<div class="no-logs">No log records found.</div>';
+                    return;
+                }
+                logsContainer.innerHTML = logs.map(log => `
+                    <div class="log-item">
+                        <div class="log-header">
+                            <span class="log-time"><i class="far fa-clock"></i> ${log.timestamp}</span>
+                        </div>
+                        <div class="log-body">
+                            <div class="log-payload">
+                                <strong>INCOMING REQUEST (JSON)</strong>
+                                <pre>${JSON.stringify(JSON.parse(log.request_body), null, 2)}</pre>
+                            </div>
+                            <div class="log-payload">
+                                <strong>SYSTEM RESPONSE</strong>
+                                <pre>${JSON.stringify(JSON.parse(log.response_body), null, 2)}</pre>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            };
+
+            // Clear logs
+            clearLogsBtn.onclick = async () => {
+                if (confirm('Are you sure you want to delete all logs?')) {
+                    await fetch('/api/logs', { method: 'DELETE' });
+                    loadLogs();
+                }
+            };
+
+            loadLogs();
+            // Refresh every 10 seconds
+            setInterval(loadLogs, 10000);
+        });
+    </script>
+</body>
+
+</html>

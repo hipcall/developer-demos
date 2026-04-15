@@ -3,4 +3,3 @@ cdr_via_webhook/app.log
 cdr_via_webhook/ngrok.log
 cdr_via_webhook/ngrok_test.log
 smartIVR_webservice/app.log
-smartIVR_webservice/templates/logs.html
