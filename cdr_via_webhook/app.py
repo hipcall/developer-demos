@@ -49,7 +49,7 @@ def download_audio(record_url, uuid):
 
 # --- Webhook ---
 
-@app.route('/webhook/hipcall-cdr', methods=['POST'])
+@app.route('/api/hipcall-cdr', methods=['POST'])
 def receive_cdr():
     payload = request.json
     if not payload:
