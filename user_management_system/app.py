@@ -262,7 +262,7 @@ def hipcall_ingress():
                 {
                     "action": "connect",
                     "args": {
-                        "destination": "1091"
+                        "destination": "801"
                     }
                 }
             ]
@@ -280,7 +280,7 @@ def hipcall_ingress():
                 {
                     "action": "connect",
                     "args": {
-                        "destination": "1092"
+                        "destination": "802"
                     }
                 }
             ]
