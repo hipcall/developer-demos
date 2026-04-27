@@ -8,7 +8,8 @@ def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not session.get('logged_in'):
-            return redirect(url_for('login', next=request.path))
+            full_path = request.environ.get('SCRIPT_NAME', '') + request.path
+            return redirect(url_for('login', next=full_path))
         return f(*args, **kwargs)
     return decorated
 

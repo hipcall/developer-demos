@@ -112,7 +112,7 @@ def login():
         password = request.form.get('password', '')
         if check_credentials(username, password):
             session['logged_in'] = True
-            next_url = request.form.get('next') or '/'
+            next_url = request.form.get('next') or url_for('index')
             return redirect(next_url)
         return render_template('login.html', error='Invalid username or password.', next=request.form.get('next', '/'))
     return render_template('login.html', error=None, next=request.args.get('next', '/'))
