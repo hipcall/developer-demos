@@ -9,6 +9,17 @@ app = Flask(__name__, static_folder='static', template_folder='templates')
 CORS(app)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-change-me')
 
+_script_name = os.environ.get('SCRIPT_NAME', '')
+if _script_name:
+    class _ScriptNameMiddleware:
+        def __init__(self, wsgi_app, script_name):
+            self.wsgi_app = wsgi_app
+            self.script_name = script_name
+        def __call__(self, environ, start_response):
+            environ['SCRIPT_NAME'] = self.script_name
+            return self.wsgi_app(environ, start_response)
+    app.wsgi_app = _ScriptNameMiddleware(app.wsgi_app, _script_name)
+
 DB_PATH = os.environ.get('DB_PATH', './data/database.db')
 PUBLIC_BASE_URL = os.environ.get('PUBLIC_BASE_URL', '')
 

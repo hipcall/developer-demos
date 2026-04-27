@@ -9,6 +9,7 @@ services:
       - DB_PATH=/app/data/database.db
       - PORT=5000
       - PUBLIC_BASE_URL=https://demos.hipcall.com.tr/user-management-system
+      - SCRIPT_NAME=/user-management-system
       - SECRET_KEY=${SECRET_KEY}
       - APP_USERNAME=${APP_USERNAME}
       - APP_PASSWORD_HASH=${APP_PASSWORD_HASH}
