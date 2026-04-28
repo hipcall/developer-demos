@@ -22,6 +22,8 @@ if _script_name:
 
 DB_PATH = os.environ.get('DB_PATH', './data/database.db')
 PUBLIC_BASE_URL = os.environ.get('PUBLIC_BASE_URL', '')
+EXTENSION_SUCCESS = os.environ.get('EXTENSION_SUCCESS')
+EXTENSION_FAIL = os.environ.get('EXTENSION_FAIL')
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -273,7 +275,7 @@ def hipcall_ingress():
                 {
                     "action": "connect",
                     "args": {
-                        "destination": "801"
+                        "destination": EXTENSION_SUCCESS
                     }
                 }
             ]
@@ -291,7 +293,7 @@ def hipcall_ingress():
                 {
                     "action": "connect",
                     "args": {
-                        "destination": "802"
+                        "destination": EXTENSION_FAIL
                     }
                 }
             ]
