@@ -4,12 +4,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuickBite Courier | System Logs</title>
+    <title>Speed Dial | System Logs</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .lang-select {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-family: inherit;
+            font-size: 0.8rem;
+            cursor: pointer;
+            outline: none;
+            width: calc(100% - 48px);
+            margin: 0 24px 8px;
+        }
+        .lang-select option {
+            background: var(--sidebar-bg);
+            color: white;
+        }
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            margin: 0 16px 4px;
+            color: var(--sidebar-text);
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            background: none;
+            border: none;
+            width: calc(100% - 32px);
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .logout-btn:hover {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+    </style>
 </head>
 
 <body>
@@ -18,42 +58,52 @@
             <div class="logo">
                 <i class="fas fa-motorcycle"></i>
                 <div style="display: flex; flex-direction: column;">
-                    <span style="line-height: 1;">QuickBite</span>
-                    <small style="font-size: 0.7rem; font-weight: 300; opacity: 0.8; margin-top: 4px;">Courier
-                        Dashboard</small>
+                    <span style="line-height: 1;">Speed Dial</span>
+                    <small style="font-size: 0.7rem; font-weight: 300; opacity: 0.8; margin-top: 4px;" data-i18n="courierDashboard">Management Panel</small>
                 </div>
             </div>
             <nav>
                 <ul>
                     <li>
-                        <a href="./"><i class="fas fa-box"></i> Orders</a>
+                        <a href="./"><i class="fas fa-box"></i> <span data-i18n="orders">Orders</span></a>
                     </li>
                     <li class="active">
-                        <a href="logs"><i class="fas fa-scroll"></i> Logs</a>
+                        <a href="logs"><i class="fas fa-scroll"></i> <span data-i18n="logs">Logs</span></a>
                     </li>
                 </ul>
             </nav>
-            <div class="sidebar-footer">
-                <p>Dummy App v1.0</p>
+            <div class="sidebar-footer" style="padding-bottom: 8px;">
+                <select id="langSwitcher" class="lang-select" onchange="changeLanguage()">
+                    <option value="en">English</option>
+                    <option value="tr">Türkçe</option>
+                    <option value="nl">Nederlands</option>
+                    <option value="it">Italiano</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                    <option value="de">Deutsch</option>
+                </select>
+                <a href="{{ url_for('logout') }}" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">Logout</span>
+                </a>
             </div>
         </aside>
 
         <main class="main-content">
             <div class="content-wrapper">
                 <div class="page-title">
-                    <h1>System Logs</h1>
-                    <p>HTTP request and response logs from Hipcall Speed Dial lookups.</p>
+                    <h1 data-i18n="systemLogs">System Logs</h1>
+                    <p data-i18n="systemLogsDesc">HTTP request and response logs from Hipcall Speed Dial lookups.</p>
                 </div>
 
                 <div class="table-container" style="margin-bottom: 24px;">
                     <div class="table-header">
-                        <h2>Recent Lookup Requests</h2>
+                        <h2 data-i18n="recentRequests">Recent Lookup Requests</h2>
                         <div class="actions">
                             <button class="btn btn-secondary" onclick="fetchLogs()">
-                                <i class="fas fa-sync-alt"></i> Refresh
+                                <i class="fas fa-sync-alt"></i> <span data-i18n="refresh">Refresh</span>
                             </button>
                             <button class="btn btn-danger" onclick="clearLogs()">
-                                <i class="fas fa-trash"></i> Clear Logs
+                                <i class="fas fa-trash"></i> <span data-i18n="clearLogs">Clear Logs</span>
                             </button>
                         </div>
                     </div>
@@ -66,18 +116,94 @@
     </div>
 
     <script>
+        const translations = {
+            en: {
+                courierDashboard: 'Management Panel', orders: 'Orders', logs: 'Logs', logout: 'Logout',
+                systemLogs: 'System Logs', systemLogsDesc: 'HTTP request and response logs from Hipcall Speed Dial lookups.',
+                recentRequests: 'Recent Lookup Requests', refresh: 'Refresh', clearLogs: 'Clear Logs',
+                request: 'Request', response: 'Response',
+                noLogs: 'No log records yet. Logs will appear here when Hipcall sends lookup requests.',
+                confirmClear: 'Are you sure you want to delete all logs?'
+            },
+            tr: {
+                courierDashboard: 'Kurye Paneli', orders: 'Siparişler', logs: 'Günlükler', logout: 'Çıkış',
+                systemLogs: 'Sistem Günlükleri', systemLogsDesc: 'Hipcall Speed Dial aramalarından gelen HTTP istek ve yanıt günlükleri.',
+                recentRequests: 'Son Arama İstekleri', refresh: 'Yenile', clearLogs: 'Günlükleri Temizle',
+                request: 'İstek', response: 'Yanıt',
+                noLogs: 'Henüz günlük kaydı yok. Hipcall arama isteği gönderdiğinde burada görünecek.',
+                confirmClear: 'Tüm günlükleri silmek istediğinizden emin misiniz?'
+            },
+            nl: {
+                courierDashboard: 'Koerier Dashboard', orders: 'Bestellingen', logs: 'Logs', logout: 'Uitloggen',
+                systemLogs: 'Systeemlogboeken', systemLogsDesc: 'HTTP-verzoek- en antwoordlogboeken van Hipcall Speed Dial-zoekopdrachten.',
+                recentRequests: 'Recente Zoekopdrachten', refresh: 'Vernieuwen', clearLogs: 'Logs wissen',
+                request: 'Verzoek', response: 'Antwoord',
+                noLogs: 'Nog geen logrecords. Logs verschijnen hier wanneer Hipcall zoekopdrachten verzendt.',
+                confirmClear: 'Weet u zeker dat u alle logs wilt verwijderen?'
+            },
+            it: {
+                courierDashboard: 'Dashboard Corriere', orders: 'Ordini', logs: 'Registri', logout: 'Disconnetti',
+                systemLogs: 'Registri di Sistema', systemLogsDesc: 'Registri di richieste e risposte HTTP dalle ricerche Hipcall Speed Dial.',
+                recentRequests: 'Richieste Recenti', refresh: 'Aggiorna', clearLogs: 'Cancella Registri',
+                request: 'Richiesta', response: 'Risposta',
+                noLogs: 'Nessun record di registro. I registri appariranno quando Hipcall invia richieste.',
+                confirmClear: 'Sei sicuro di voler eliminare tutti i registri?'
+            },
+            fr: {
+                courierDashboard: 'Tableau de Bord Coursier', orders: 'Commandes', logs: 'Journaux', logout: 'Déconnexion',
+                systemLogs: 'Journaux Système', systemLogsDesc: 'Journaux de requêtes et réponses HTTP des recherches Hipcall Speed Dial.',
+                recentRequests: 'Requêtes Récentes', refresh: 'Actualiser', clearLogs: 'Effacer les journaux',
+                request: 'Requête', response: 'Réponse',
+                noLogs: 'Aucun enregistrement. Les journaux apparaîtront lorsque Hipcall envoie des requêtes.',
+                confirmClear: 'Êtes-vous sûr de vouloir supprimer tous les journaux?'
+            },
+            es: {
+                courierDashboard: 'Panel de Mensajero', orders: 'Pedidos', logs: 'Registros', logout: 'Cerrar sesión',
+                systemLogs: 'Registros del Sistema', systemLogsDesc: 'Registros de solicitudes y respuestas HTTP de las búsquedas de Hipcall Speed Dial.',
+                recentRequests: 'Solicitudes Recientes', refresh: 'Actualizar', clearLogs: 'Borrar registros',
+                request: 'Solicitud', response: 'Respuesta',
+                noLogs: 'Aún no hay registros. Los registros aparecerán cuando Hipcall envíe solicitudes.',
+                confirmClear: '¿Está seguro de que desea eliminar todos los registros?'
+            },
+            de: {
+                courierDashboard: 'Kurier-Dashboard', orders: 'Bestellungen', logs: 'Protokolle', logout: 'Abmelden',
+                systemLogs: 'Systemprotokolle', systemLogsDesc: 'HTTP-Anforderungs- und Antwortprotokolle von Hipcall Speed Dial-Suchen.',
+                recentRequests: 'Letzte Suchanfragen', refresh: 'Aktualisieren', clearLogs: 'Protokolle löschen',
+                request: 'Anfrage', response: 'Antwort',
+                noLogs: 'Noch keine Protokolleinträge. Protokolle erscheinen wenn Hipcall Anfragen sendet.',
+                confirmClear: 'Sind Sie sicher, dass Sie alle Protokolle löschen möchten?'
+            }
+        };
+
+        function t(key) {
+            const lang = document.getElementById('langSwitcher').value;
+            return (translations[lang] && translations[lang][key]) || translations['en'][key] || key;
+        }
+
+        function changeLanguage() {
+            const lang = document.getElementById('langSwitcher').value;
+            localStorage.setItem('speed_dial_lang', lang);
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.textContent = t(key);
+            });
+            renderLogs(currentLogs);
+        }
+
+        let currentLogs = [];
+
         async function fetchLogs() {
             try {
                 const res = await fetch('api/logs');
-                const logs = await res.json();
-                renderLogs(logs);
+                currentLogs = await res.json();
+                renderLogs(currentLogs);
             } catch (err) {
                 console.error('Failed to fetch logs:', err);
             }
         }
 
         async function clearLogs() {
-            if (!confirm('Are you sure you want to delete all logs?')) return;
+            if (!confirm(t('confirmClear'))) return;
             try {
                 await fetch('api/logs', { method: 'DELETE' });
                 fetchLogs();
@@ -106,7 +232,7 @@
             container.innerHTML = '';
 
             if (logs.length === 0) {
-                container.innerHTML = '<div class="no-data">No log records yet. Logs will appear here when Hipcall sends lookup requests.</div>';
+                container.innerHTML = `<div class="no-data">${t('noLogs')}</div>`;
                 return;
             }
 
@@ -120,15 +246,15 @@
                             <span class="log-path">${log.path}</span>
                             <span class="log-status ${getStatusClass(log.status_code)}">${log.status_code}</span>
                         </div>
-                        <span class="log-time">${new Date(log.timestamp).toLocaleString('en-US')}</span>
+                        <span class="log-time">${new Date(log.timestamp).toLocaleString()}</span>
                     </div>
                     <div class="log-bodies">
                         <div class="log-body">
-                            <h4>Request</h4>
+                            <h4>${t('request')}</h4>
                             <pre>${formatJson(log.request_body)}</pre>
                         </div>
                         <div class="log-body">
-                            <h4>Response</h4>
+                            <h4>${t('response')}</h4>
                             <pre>${formatJson(log.response_body)}</pre>
                         </div>
                     </div>
@@ -137,8 +263,13 @@
             });
         }
 
-        fetchLogs();
-        setInterval(fetchLogs, 15000);
+        document.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('speed_dial_lang') || 'en';
+            document.getElementById('langSwitcher').value = saved;
+            changeLanguage();
+            fetchLogs();
+            setInterval(fetchLogs, 15000);
+        });
     </script>
 </body>
 

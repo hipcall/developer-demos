@@ -7,4 +7,10 @@ services:
       - "5010:5010"
     volumes:
       - ./data:/app/data
+    environment:
+      - DB_PATH=/app/data/orders.db
+      - SECRET_KEY=${SECRET_KEY}
+      - APP_USERNAME=${APP_USERNAME}
+      - APP_PASSWORD_HASH=${APP_PASSWORD_HASH}
+      - APP_SCRIPT_NAME=${APP_SCRIPT_NAME}
     restart: always

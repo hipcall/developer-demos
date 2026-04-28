@@ -1,13 +1,26 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for
 from flask_cors import CORS
 import sqlite3
 import os
 import json
+from auth import login_required, check_credentials
 
 app = Flask(__name__)
 CORS(app)
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-change-me')
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'data', 'orders.db')
+_script_name = os.environ.get('APP_SCRIPT_NAME', '')
+if _script_name:
+    class _ScriptNameMiddleware:
+        def __init__(self, wsgi_app, script_name):
+            self.wsgi_app = wsgi_app
+            self.script_name = script_name
+        def __call__(self, environ, start_response):
+            environ['SCRIPT_NAME'] = self.script_name
+            return self.wsgi_app(environ, start_response)
+    app.wsgi_app = _ScriptNameMiddleware(app.wsgi_app, _script_name)
+
+DB_PATH = os.environ.get('DB_PATH', os.path.join(os.path.dirname(__file__), 'data', 'orders.db'))
 
 
 def get_db():
@@ -17,16 +30,6 @@ def get_db():
 
 
 def normalize_phone(phone):
-    """
-    Normalize any Turkish phone number format to 90XXXXXXXXXX (12 digits).
-
-    Supported inputs:
-        +90 506 050 8169  -> 905060508169
-        0506 050 8169     -> 905060508169
-        506 050 8169      -> 905060508169
-        905060508169      -> 905060508169
-        +905060508169     -> 905060508169
-    """
     phone = phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
     if phone.startswith('+'):
         phone = phone[1:]
@@ -40,7 +43,6 @@ def normalize_phone(phone):
 
 
 def log_request(method, path, req_body, res_body, status_code):
-    """Log HTTP request and response to the database."""
     try:
         conn = sqlite3.connect(DB_PATH)
         conn.execute(
@@ -54,27 +56,31 @@ def log_request(method, path, req_body, res_body, status_code):
         print(f"Logging error: {e}")
 
 
+# --- Auth ---
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username', '')
+        password = request.form.get('password', '')
+        if check_credentials(username, password):
+            session['logged_in'] = True
+            next_url = request.form.get('next') or url_for('index')
+            return redirect(next_url)
+        return render_template('login.html', error='Invalid username or password.', next=request.form.get('next', '/'))
+    return render_template('login.html', error=None, next=request.args.get('next', '/'))
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+
 # --- Hipcall Speed Dial Endpoint ---
 
 @app.route('/lookup', methods=['POST'])
 def lookup():
-    """
-    Hipcall Speed Dial (Hizli Arama) integration endpoint.
-
-    Hipcall sends:
-    {
-        "number": "123456",
-        "user_id": 3508,
-        "uuid": "06787f4b-4873-433b-a000-8fd99ff24ccf",
-        "speed_dial_id": 5,
-        "timestamp": 1774611216
-    }
-
-    The "number" field contains the DTMF digits the courier typed (the order code).
-
-    Expected response:
-    { "destination": "905XXXXXXXXX" }
-    """
     data = request.get_json()
     req_body = json.dumps(data) if data else ''
 
@@ -86,7 +92,7 @@ def lookup():
     code = str(data['number']).strip()
 
     if not code.isdigit() or len(code) != 4:
-        res = {"error": "Invalid order code. Must be exactly 4 digits."}
+        res = {"error": "Invalid reference code. Must be exactly 4 digits."}
         log_request('POST', '/lookup', req_body, json.dumps(res), 400)
         return jsonify(res), 400
 
@@ -101,7 +107,7 @@ def lookup():
         log_request('POST', '/lookup', req_body, json.dumps(res), 200)
         return jsonify(res), 200
     else:
-        res = {"error": "Order not found"}
+        res = {"error": "Reference code not found"}
         log_request('POST', '/lookup', req_body, json.dumps(res), 404)
         return jsonify(res), 404
 
@@ -109,6 +115,7 @@ def lookup():
 # --- Order Management API ---
 
 @app.route('/api/orders', methods=['GET'])
+@login_required
 def get_orders():
     conn = get_db()
     orders = conn.execute(
@@ -119,6 +126,7 @@ def get_orders():
 
 
 @app.route('/api/orders', methods=['POST'])
+@login_required
 def create_order():
     data = request.get_json()
     if not data:
@@ -133,7 +141,7 @@ def create_order():
         return jsonify({"error": "All fields are required"}), 400
 
     if not order_code.isdigit() or len(order_code) != 4:
-        return jsonify({"error": "Order code must be exactly 4 digits"}), 400
+        return jsonify({"error": "Reference code must be exactly 4 digits"}), 400
 
     phone = normalize_phone(phone)
 
@@ -147,10 +155,11 @@ def create_order():
         conn.close()
         return jsonify({"status": "success"}), 201
     except sqlite3.IntegrityError:
-        return jsonify({"error": "Order code already exists"}), 409
+        return jsonify({"error": "Reference code already exists"}), 409
 
 
 @app.route('/api/orders/<int:order_id>', methods=['DELETE'])
+@login_required
 def delete_order(order_id):
     conn = get_db()
     conn.execute('DELETE FROM orders WHERE id = ?', (order_id,))
@@ -162,6 +171,7 @@ def delete_order(order_id):
 # --- Logs API ---
 
 @app.route('/api/logs', methods=['GET'])
+@login_required
 def get_logs():
     conn = get_db()
     logs = conn.execute(
@@ -172,6 +182,7 @@ def get_logs():
 
 
 @app.route('/api/logs', methods=['DELETE'])
+@login_required
 def clear_logs():
     conn = get_db()
     conn.execute('DELETE FROM logs')
@@ -183,11 +194,13 @@ def clear_logs():
 # --- Frontend Routes ---
 
 @app.route('/')
+@login_required
 def index():
     return render_template('index.html')
 
 
 @app.route('/logs')
+@login_required
 def logs_page():
     return render_template('logs.html')
 

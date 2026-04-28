@@ -4,12 +4,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuickBite Courier | Order Dashboard</title>
+    <title>Speed Dial | Order Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .lang-select {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-family: inherit;
+            font-size: 0.8rem;
+            cursor: pointer;
+            outline: none;
+            margin-top: auto;
+            width: calc(100% - 48px);
+            margin: 0 24px 8px;
+        }
+        .lang-select option {
+            background: var(--sidebar-bg);
+            color: white;
+        }
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            margin: 0 16px 4px;
+            color: var(--sidebar-text);
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            background: none;
+            border: none;
+            width: calc(100% - 32px);
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .logout-btn:hover {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+    </style>
 </head>
 
 <body>
@@ -18,40 +59,50 @@
             <div class="logo">
                 <i class="fas fa-motorcycle"></i>
                 <div style="display: flex; flex-direction: column;">
-                    <span style="line-height: 1;">QuickBite</span>
-                    <small style="font-size: 0.7rem; font-weight: 300; opacity: 0.8; margin-top: 4px;">Courier
-                        Dashboard</small>
+                    <span style="line-height: 1;">Speed Dial</span>
+                    <small style="font-size: 0.7rem; font-weight: 300; opacity: 0.8; margin-top: 4px;" data-i18n="courierDashboard">Management Panel</small>
                 </div>
             </div>
             <nav>
                 <ul>
                     <li class="active">
-                        <a href="./"><i class="fas fa-box"></i> Orders</a>
+                        <a href="./"><i class="fas fa-box"></i> <span data-i18n="orders">Orders</span></a>
                     </li>
                     <li>
-                        <a href="logs"><i class="fas fa-scroll"></i> Logs</a>
+                        <a href="logs"><i class="fas fa-scroll"></i> <span data-i18n="logs">Logs</span></a>
                     </li>
                 </ul>
             </nav>
-            <div class="sidebar-footer">
-                <p>Dummy App v1.0</p>
+            <div class="sidebar-footer" style="padding-bottom: 8px;">
+                <select id="langSwitcher" class="lang-select" onchange="changeLanguage()">
+                    <option value="en">English</option>
+                    <option value="tr">Türkçe</option>
+                    <option value="nl">Nederlands</option>
+                    <option value="it">Italiano</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                    <option value="de">Deutsch</option>
+                </select>
+                <a href="{{ url_for('logout') }}" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">Logout</span>
+                </a>
             </div>
         </aside>
 
         <main class="main-content">
             <div class="content-wrapper">
                 <div class="page-title">
-                    <h1>Order Management</h1>
-                    <p>Manage customer orders for Hipcall Speed Dial integration.</p>
+                    <h1 data-i18n="orderManagement">Order Management</h1>
+                    <p data-i18n="orderManagementDesc">Manage customer orders for Hipcall Speed Dial integration.</p>
                 </div>
 
-                <div class="stats-grid">
+                <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">
                     <div class="stat-card">
                         <div class="stat-icon orders">
                             <i class="fas fa-box"></i>
                         </div>
                         <div class="stat-info">
-                            <h3>Total Orders</h3>
+                            <h3 data-i18n="totalOrders">Total Orders</h3>
                             <p id="stat-total">0</p>
                         </div>
                     </div>
@@ -60,30 +111,21 @@
                             <i class="fas fa-users"></i>
                         </div>
                         <div class="stat-info">
-                            <h3>Customers</h3>
+                            <h3 data-i18n="customers">Customers</h3>
                             <p id="stat-customers">0</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon recent">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div class="stat-info">
-                            <h3>Latest Order</h3>
-                            <p id="stat-latest" style="font-size: 1rem;">-</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="table-container">
                     <div class="table-header">
-                        <h2>Orders</h2>
+                        <h2 data-i18n="orders">Orders</h2>
                         <div class="actions">
                             <button class="btn btn-secondary" onclick="fetchOrders()">
-                                <i class="fas fa-sync-alt"></i> Refresh
+                                <i class="fas fa-sync-alt"></i> <span data-i18n="refresh">Refresh</span>
                             </button>
                             <button class="btn btn-primary" onclick="openModal()">
-                                <i class="fas fa-plus"></i> New Order
+                                <i class="fas fa-plus"></i> <span data-i18n="newOrder">New Order</span>
                             </button>
                         </div>
                     </div>
@@ -91,11 +133,11 @@
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>Order Code</th>
-                                <th>Customer</th>
-                                <th>Phone</th>
-                                <th>Created At</th>
-                                <th>Action</th>
+                                <th data-i18n="referenceCode">Reference Code</th>
+                                <th data-i18n="customer">Customer</th>
+                                <th data-i18n="phone">Phone</th>
+                                <th data-i18n="createdAt">Created At</th>
+                                <th data-i18n="action">Action</th>
                             </tr>
                         </thead>
                         <tbody id="orders-body">
@@ -110,31 +152,31 @@
     <div id="order-modal" class="modal-overlay">
         <div class="modal-box">
             <button class="close" onclick="closeModal()">&times;</button>
-            <h2><i class="fas fa-plus-circle" style="color: var(--primary);"></i> New Order</h2>
+            <h2><i class="fas fa-plus-circle" style="color: var(--primary);"></i> <span data-i18n="newOrder">New Order</span></h2>
 
             <div id="modal-alert" class="alert"></div>
 
             <form id="order-form" onsubmit="submitOrder(event)">
                 <div class="form-group">
-                    <label for="first_name">First Name</label>
+                    <label for="first_name" data-i18n="firstName">First Name</label>
                     <input type="text" id="first_name" name="first_name" required>
                 </div>
                 <div class="form-group">
-                    <label for="last_name">Last Name</label>
+                    <label for="last_name" data-i18n="lastName">Last Name</label>
                     <input type="text" id="last_name" name="last_name" required>
                 </div>
                 <div class="form-group">
-                    <label for="phone">Phone Number</label>
+                    <label for="phone" data-i18n="phoneNumber">Phone Number</label>
                     <input type="text" id="phone" name="phone" placeholder="905XXXXXXXXX" required>
                 </div>
                 <div class="form-group">
-                    <label for="order_code">Order Code (4 digits)</label>
+                    <label for="order_code" data-i18n="referenceCodeLabel">Reference Code (4 digits)</label>
                     <input type="text" id="order_code" name="order_code" placeholder="e.g. 1001" required
                         maxlength="4" pattern="\d{4}" inputmode="numeric">
                 </div>
                 <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Order</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()" data-i18n="cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> <span data-i18n="saveOrder">Save Order</span></button>
                 </div>
             </form>
         </div>
