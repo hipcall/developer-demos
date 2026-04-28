@@ -7,4 +7,11 @@ services:
       - "5008:5008"
     volumes:
       - ./data:/app/data
+    environment:
+      - DB_PATH=/app/data/crm.db
+      - SECRET_KEY=${SECRET_KEY}
+      - APP_USERNAME=${APP_USERNAME}
+      - APP_PASSWORD_HASH=${APP_PASSWORD_HASH}
+      - EXTENSION_DEBT=${EXTENSION_DEBT}
+      - EXTENSION_NO_DEBT=${EXTENSION_NO_DEBT}
     restart: always

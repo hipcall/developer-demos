@@ -1,35 +1,28 @@
-from flask import Flask, request, jsonify, render_template, url_for, Response
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for, Response
 from flask_cors import CORS
 import sqlite3
 import os
 import json
-from functools import wraps
+from auth import login_required, check_credentials
+
 app = Flask(__name__)
 CORS(app)
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-change-me')
 
-DB_PATH = './data/crm.db'
+_script_name = os.environ.get('SCRIPT_NAME', '')
+if _script_name:
+    class _ScriptNameMiddleware:
+        def __init__(self, wsgi_app, script_name):
+            self.wsgi_app = wsgi_app
+            self.script_name = script_name
+        def __call__(self, environ, start_response):
+            environ['SCRIPT_NAME'] = self.script_name
+            return self.wsgi_app(environ, start_response)
+    app.wsgi_app = _ScriptNameMiddleware(app.wsgi_app, _script_name)
 
-# --- AUTHENTICATION ---
-
-def check_auth(username, password):
-    """Check username and password."""
-    return username == 'admin' and password == 'admin123'
-
-def authenticate():
-    """Return a 401 Unauthorized response."""
-    return Response(
-        'Authentication required.', 401,
-        {'WWW-Authenticate': 'Basic realm="Login Required"'}
-    )
-
-def requires_auth(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        auth = request.authorization
-        if not auth or not check_auth(auth.username, auth.password):
-            return authenticate()
-        return f(*args, **kwargs)
-    return decorated
+DB_PATH = os.environ.get('DB_PATH', './data/crm.db')
+EXTENSION_DEBT = os.environ.get('EXTENSION_DEBT')
+EXTENSION_NO_DEBT = os.environ.get('EXTENSION_NO_DEBT')
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -49,6 +42,27 @@ def normalize_phone(phone):
         phone = '90' + phone
     return phone
 
+# --- AUTH ---
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username', '')
+        password = request.form.get('password', '')
+        if check_credentials(username, password):
+            session['logged_in'] = True
+            next_url = request.form.get('next') or url_for('index')
+            return redirect(next_url)
+        return render_template('login.html', error='Invalid username or password.', next=request.form.get('next', '/'))
+    return render_template('login.html', error=None, next=request.args.get('next', '/'))
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+
 # --- ENDPOINT ---
 
 @app.route('/api/smart-ivr', methods=['POST'])
@@ -58,40 +72,40 @@ def smart_ivr():
         data = request.get_json(silent=True)
     else:
         data = request.form.to_dict()
-    
+
     if not data:
-        data = {} # Ensure it's a dict for logging
-    
+        data = {}
+
     print(f"--- Incoming Request: {data}")
-    
+
     caller = data.get('caller')
-    
+
     # Default response for not found or invalid
-    res = {"extension": "1094"}
-    
+    res = {"extension": EXTENSION_NO_DEBT}
+
     if not caller:
         print(f"--- Yanıt (Caller Yok veya Veri Yok): {res}")
     else:
         normalized_caller = normalize_phone(caller)
-        
+
         conn = get_db_connection()
         customer = conn.execute(
-            'SELECT id, has_debt FROM customers WHERE phone = ?', 
+            'SELECT id, has_debt FROM customers WHERE phone = ?',
             (normalized_caller,)
         ).fetchone()
         conn.close()
-        
+
         if customer:
             if customer['has_debt'] == 1:
-                res = {"extension": "1093"}
+                res = {"extension": EXTENSION_DEBT}
                 print(f"--- Yanıt (Kayıtlı ve Borcu Var): {res}")
             else:
-                res = {"extension": "1094"}
+                res = {"extension": EXTENSION_NO_DEBT}
                 print(f"--- Yanıt (Kayıtlı ama Borcu Yok): {res}")
         else:
             print(f"--- Yanıt (Kayıt Bulunamadı): {res}")
-    
-    # Save log to database (Always logs every request now)
+
+    # Save log to database
     try:
         conn = get_db_connection()
         conn.execute(
@@ -102,13 +116,13 @@ def smart_ivr():
         conn.close()
     except Exception as e:
         print(f"Logging error: {e}")
-        
+
     return jsonify(res), 200
 
 # --- CRM APIs ---
 
 @app.route('/api/customers', methods=['GET'])
-@requires_auth
+@login_required
 def get_customers():
     conn = get_db_connection()
     customers = conn.execute('SELECT * FROM customers ORDER BY created_at DESC').fetchall()
@@ -118,7 +132,7 @@ def get_customers():
 # --- LOG APIs ---
 
 @app.route('/api/logs', methods=['GET'])
-@requires_auth
+@login_required
 def get_logs():
     conn = get_db_connection()
     logs = conn.execute('SELECT * FROM logs ORDER BY timestamp DESC LIMIT 50').fetchall()
@@ -126,7 +140,7 @@ def get_logs():
     return jsonify([dict(l) for l in logs])
 
 @app.route('/api/logs', methods=['DELETE'])
-@requires_auth
+@login_required
 def delete_logs():
     conn = get_db_connection()
     conn.execute('DELETE FROM logs')
@@ -135,7 +149,7 @@ def delete_logs():
     return jsonify({"status": "success"}), 200
 
 @app.route('/api/customers', methods=['POST'])
-@requires_auth
+@login_required
 def add_customer():
     data = request.json
     first_name = data.get('first_name')
@@ -143,11 +157,11 @@ def add_customer():
     phone = normalize_phone(data.get('phone'))
     email = data.get('email')
     company_name = data.get('company_name')
-    has_debt = int(data.get('has_debt', 0)) # Default to 0
-    
+    has_debt = int(data.get('has_debt', 0))
+
     if not first_name or not last_name or not phone:
         return jsonify({"error": "Missing required fields"}), 400
-    
+
     try:
         conn = get_db_connection()
         conn.execute(
@@ -161,7 +175,7 @@ def add_customer():
         return jsonify({"error": "Phone number already exists"}), 400
 
 @app.route('/api/customers/<int:id>', methods=['DELETE'])
-@requires_auth
+@login_required
 def delete_customer(id):
     conn = get_db_connection()
     conn.execute('DELETE FROM customers WHERE id = ?', (id,))
@@ -170,7 +184,7 @@ def delete_customer(id):
     return jsonify({"status": "success"}), 200
 
 @app.route('/api/customers/<int:id>', methods=['PUT'])
-@requires_auth
+@login_required
 def update_customer(id):
     data = request.json
     first_name = data.get('first_name')
@@ -198,20 +212,19 @@ def update_customer(id):
 # --- FRONTEND ROUTES ---
 
 @app.route('/')
-@requires_auth
+@login_required
 def index():
     return render_template('index.html')
 
 @app.route('/logs')
-@requires_auth
+@login_required
 def logs_page():
     return render_template('logs.html')
 
 if __name__ == '__main__':
-    # Ensure database exists
     if not os.path.exists(DB_PATH):
         from init_db import init_db
         init_db()
-        
+
     port = int(os.environ.get('PORT', 5008))
     app.run(debug=True, host='0.0.0.0', port=port)
