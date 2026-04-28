@@ -9,7 +9,7 @@ app = Flask(__name__)
 CORS(app)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-change-me')
 
-_script_name = os.environ.get('SCRIPT_NAME', '')
+_script_name = os.environ.get('APP_SCRIPT_NAME', '')
 if _script_name:
     class _ScriptNameMiddleware:
         def __init__(self, wsgi_app, script_name):
