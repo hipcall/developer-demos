@@ -1,14 +1,11 @@
 import sqlite3
 import os
 
-DB_PATH = './data/insight_card.db'
-os.makedirs('./data', exist_ok=True)
+DB_PATH = os.environ.get('DB_PATH', os.path.join(os.path.dirname(__file__), 'data', 'insight_card.db'))
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 conn = sqlite3.connect(DB_PATH)
 c = conn.cursor()
-
-c.execute('DROP TABLE IF EXISTS contacts')
-c.execute('DROP TABLE IF EXISTS card_logs')
 
 c.execute('''
     CREATE TABLE IF NOT EXISTS contacts (
@@ -31,6 +28,13 @@ c.execute('''
         response_code INTEGER,
         raw_payload TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+''')
+
+c.execute('''
+    CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT
     )
 ''')
 

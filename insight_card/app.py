@@ -1,16 +1,32 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for
 from flask_cors import CORS
 import sqlite3
 import os
 import json
 import requests as http_requests
+from dotenv import load_dotenv
+from auth import login_required, check_credentials
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-change-me')
 
-DB_PATH = './data/insight_card.db'
+DB_PATH = os.environ.get('DB_PATH', os.path.join(os.path.dirname(__file__), 'data', 'insight_card.db'))
 HIPCALL_API_URL = 'https://use.hipcall.com.tr/api/v3'
-HIPCALL_API_TOKEN = os.environ.get('HIPCALL_API_TOKEN', '')
+HIPCALL_ACCOUNTS = json.loads(os.environ.get('HIPCALL_ACCOUNTS', '{}'))
+
+_script_name = os.environ.get('APP_SCRIPT_NAME', '')
+if _script_name:
+    class _ScriptNameMiddleware:
+        def __init__(self, wsgi_app, script_name):
+            self.wsgi_app = wsgi_app
+            self.script_name = script_name
+        def __call__(self, environ, start_response):
+            environ['SCRIPT_NAME'] = self.script_name
+            return self.wsgi_app(environ, start_response)
+    app.wsgi_app = _ScriptNameMiddleware(app.wsgi_app, _script_name)
 
 
 def get_db():
@@ -19,17 +35,21 @@ def get_db():
     return conn
 
 
+def get_active_api_key():
+    conn = get_db()
+    row = conn.execute("SELECT value FROM settings WHERE key = 'active_account'").fetchone()
+    conn.close()
+    if not row:
+        return None
+    account = HIPCALL_ACCOUNTS.get(row['value'])
+    return account.get('api_key') if account else None
+
+
 def normalize_phone(phone):
-    """Normalize phone to E.164 format (90532...)."""
     if not phone:
         return ''
-    # Strip non-digits except '+'
     digits = ''.join(c for c in phone if c.isdigit() or c == '+')
-    # Remove leading '+'
     digits = digits.lstrip('+')
-    # If it starts with '0', replace with '90' (Turkey specific assumption, but common for this user)
-    # However, Hipcall usually sends 90... directly.
-    # We should match what's in the DB.
     if digits.startswith('0'):
         digits = '90' + digits[1:]
     return digits
@@ -45,9 +65,9 @@ def find_contact(phone):
     return dict(contact) if contact else None
 
 
-def send_card(call_id, contact):
+def send_card(call_id, contact, api_key):
     headers = {
-        'Authorization': f'Bearer {HIPCALL_API_TOKEN}',
+        'Authorization': f'Bearer {api_key}',
         'Content-Type': 'application/json',
         'Accept': 'application/json'
     }
@@ -73,6 +93,27 @@ def send_card(call_id, contact):
         return 0
 
 
+# --- Auth ---
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username', '')
+        password = request.form.get('password', '')
+        if check_credentials(username, password):
+            session['logged_in'] = True
+            next_url = request.form.get('next') or url_for('index')
+            return redirect(next_url)
+        return render_template('login.html', error='Invalid username or password.', next=request.form.get('next', '/'))
+    return render_template('login.html', error=None, next=request.args.get('next', '/'))
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+
 # --- Webhook ---
 
 @app.route('/webhook/insight-card', methods=['POST'])
@@ -85,25 +126,27 @@ def webhook():
     if event != 'call_init':
         return jsonify({"status": "ignored", "event": event}), 200
 
+    api_key = get_active_api_key()
+    if not api_key:
+        return jsonify({"error": "No active Hipcall account configured"}), 503
+
     data = payload.get('data', {})
     call_id = data.get('uuid')
     direction = data.get('direction')
 
-    # outbound -> customer is callee, inbound -> customer is caller
     customer_number = data.get('callee_number', '') if direction == 'outbound' else data.get('caller_number', '')
 
     contact = find_contact(customer_number)
     if not contact:
         return jsonify({"status": "no_match", "customer_number": customer_number}), 200
 
-    code = send_card(call_id, contact)
+    code = send_card(call_id, contact, api_key)
     status = 'sent' if code in (200, 201) else 'failed'
-    matched_number = contact['phone_number']
 
     conn = get_db()
     conn.execute(
         'INSERT INTO card_logs (call_id, caller_number, contact_name, contact_company, status, response_code, raw_payload) VALUES (?,?,?,?,?,?,?)',
-        (call_id, matched_number, contact['full_name'], contact['company'], status, code, json.dumps(payload))
+        (call_id, contact['phone_number'], contact['full_name'], contact['company'], status, code, json.dumps(payload))
     )
     conn.commit()
     conn.close()
@@ -111,9 +154,35 @@ def webhook():
     return jsonify({"status": status, "contact": contact['full_name']}), 201
 
 
-# --- API ---
+# --- Settings API ---
+
+@app.route('/api/settings/active-account', methods=['GET'])
+@login_required
+def get_active_account():
+    conn = get_db()
+    row = conn.execute("SELECT value FROM settings WHERE key = 'active_account'").fetchone()
+    conn.close()
+    return jsonify({"active_account": row['value'] if row else None})
+
+
+@app.route('/api/settings/active-account', methods=['POST'])
+@login_required
+def set_active_account():
+    data = request.get_json()
+    account_id = data.get('account_id', '')
+    if account_id and account_id not in HIPCALL_ACCOUNTS:
+        return jsonify({"error": "Invalid account"}), 400
+    conn = get_db()
+    conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('active_account', ?)", (account_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "ok"})
+
+
+# --- Contacts API ---
 
 @app.route('/api/contacts')
+@login_required
 def get_contacts():
     conn = get_db()
     contacts = conn.execute('SELECT * FROM contacts ORDER BY full_name').fetchall()
@@ -122,6 +191,7 @@ def get_contacts():
 
 
 @app.route('/api/contacts', methods=['POST'])
+@login_required
 def add_contact():
     data = request.json
     if not data or not data.get('phone_number') or not data.get('full_name') or not data.get('company'):
@@ -142,6 +212,7 @@ def add_contact():
 
 
 @app.route('/api/contacts/<int:contact_id>', methods=['PUT'])
+@login_required
 def update_contact(contact_id):
     data = request.json
     if not data:
@@ -170,6 +241,7 @@ def update_contact(contact_id):
 
 
 @app.route('/api/contacts/<int:contact_id>', methods=['DELETE'])
+@login_required
 def delete_contact(contact_id):
     conn = get_db()
     conn.execute('DELETE FROM contacts WHERE id = ?', (contact_id,))
@@ -179,6 +251,7 @@ def delete_contact(contact_id):
 
 
 @app.route('/api/logs')
+@login_required
 def get_logs():
     conn = get_db()
     logs = conn.execute('SELECT * FROM card_logs ORDER BY created_at DESC LIMIT 50').fetchall()
@@ -189,10 +262,13 @@ def get_logs():
 # --- Frontend ---
 
 @app.route('/')
+@login_required
 def index():
-    return render_template('index.html')
+    accounts = [{"account_id": k, "label": v.get("label", k)} for k, v in HIPCALL_ACCOUNTS.items()]
+    return render_template('index.html', accounts=accounts)
 
 
 if __name__ == '__main__':
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     port = int(os.environ.get('PORT', 5009))
     app.run(debug=True, host='0.0.0.0', port=port)

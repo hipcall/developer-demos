@@ -9,5 +9,9 @@ services:
       - ./data:/app/data
     environment:
       - PORT=5009
-      - HIPCALL_API_TOKEN=${HIPCALL_API_TOKEN}
+      - SECRET_KEY=${SECRET_KEY}
+      - APP_USERNAME=${APP_USERNAME}
+      - APP_PASSWORD_HASH=${APP_PASSWORD_HASH}
+      - APP_SCRIPT_NAME=${APP_SCRIPT_NAME}
+      - HIPCALL_ACCOUNTS=${HIPCALL_ACCOUNTS}
     restart: always
