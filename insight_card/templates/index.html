@@ -153,9 +153,14 @@
                     <div class="table-container">
                         <div class="table-header">
                             <h2 data-i18n="recentCards">Recent Cards</h2>
-                            <button class="btn btn-outline" onclick="fetchLogs()">
-                                <i class="fas fa-arrows-rotate"></i> <span data-i18n="refresh">Refresh</span>
-                            </button>
+                            <div style="display:flex;gap:8px;">
+                                <button class="btn btn-outline" onclick="fetchLogs()">
+                                    <i class="fas fa-arrows-rotate"></i> <span data-i18n="refresh">Refresh</span>
+                                </button>
+                                <button class="btn btn-danger" onclick="clearLogs()">
+                                    <i class="fas fa-trash"></i> <span data-i18n="clearLogs">Clear Logs</span>
+                                </button>
+                            </div>
                         </div>
                         <table class="data-table">
                             <thead>
@@ -195,6 +200,7 @@
                 contactAdded: 'Contact added', contactDeleted: 'Contact deleted',
                 errRequired: 'Fields phone, name, and company are required',
                 accountSaved: 'Active account updated.', accountCleared: 'Account selection cleared.',
+                clearLogs: 'Clear Logs', logsCleared: 'Logs cleared.',
             },
             tr: {
                 navContacts: 'Kişiler', navLogs: 'Kart Logları', logout: 'Çıkış',
@@ -209,6 +215,7 @@
                 contactAdded: 'Kişi eklendi', contactDeleted: 'Kişi silindi',
                 errRequired: 'Telefon, isim ve firma alanları zorunludur',
                 accountSaved: 'Aktif hesap güncellendi.', accountCleared: 'Hesap seçimi temizlendi.',
+                clearLogs: 'Logları Temizle', logsCleared: 'Loglar temizlendi.',
             },
             nl: {
                 navContacts: 'Contacten', navLogs: 'Kaartlogs', logout: 'Uitloggen',
@@ -222,6 +229,7 @@
                 noContacts: 'Nog geen contacten.', noLogs: 'Nog geen kaartlogs.',
                 contactAdded: 'Contact toegevoegd', contactDeleted: 'Contact verwijderd',
                 errRequired: 'Telefoon, naam en bedrijf zijn verplicht',
+                clearLogs: 'Logs wissen', logsCleared: 'Logs gewist.',
             },
             it: {
                 navContacts: 'Contatti', navLogs: 'Log Schede', logout: 'Disconnetti',
@@ -235,6 +243,7 @@
                 noContacts: 'Nessun contatto ancora.', noLogs: 'Nessun log scheda ancora.',
                 contactAdded: 'Contatto aggiunto', contactDeleted: 'Contatto eliminato',
                 errRequired: 'Telefono, nome e azienda sono obbligatori',
+                clearLogs: 'Cancella log', logsCleared: 'Log cancellati.',
             },
             fr: {
                 navContacts: 'Contacts', navLogs: 'Journaux de cartes', logout: 'Déconnexion',
@@ -248,6 +257,7 @@
                 noContacts: 'Aucun contact pour l\'instant.', noLogs: 'Aucun journal de carte pour l\'instant.',
                 contactAdded: 'Contact ajouté', contactDeleted: 'Contact supprimé',
                 errRequired: 'Téléphone, nom et entreprise sont obligatoires',
+                clearLogs: 'Effacer les journaux', logsCleared: 'Journaux effacés.',
             },
             es: {
                 navContacts: 'Contactos', navLogs: 'Registros de tarjetas', logout: 'Cerrar sesión',
@@ -261,6 +271,7 @@
                 noContacts: 'Sin contactos aún.', noLogs: 'Sin registros de tarjetas aún.',
                 contactAdded: 'Contacto agregado', contactDeleted: 'Contacto eliminado',
                 errRequired: 'Teléfono, nombre y empresa son obligatorios',
+                clearLogs: 'Borrar registros', logsCleared: 'Registros borrados.',
             },
             de: {
                 navContacts: 'Kontakte', navLogs: 'Kartenprotokolle', logout: 'Abmelden',
@@ -274,6 +285,7 @@
                 noContacts: 'Noch keine Kontakte.', noLogs: 'Noch keine Kartenprotokolle.',
                 contactAdded: 'Kontakt hinzugefügt', contactDeleted: 'Kontakt gelöscht',
                 errRequired: 'Telefon, Name und Unternehmen sind erforderlich',
+                clearLogs: 'Protokolle löschen', logsCleared: 'Protokolle gelöscht.',
             }
         };
 
@@ -416,6 +428,13 @@
                     <td>${new Date(l.created_at).toLocaleString('tr-TR')}</td>
                 </tr>
             `).join('');
+        }
+
+        async function clearLogs() {
+            if (!confirm(t('clearLogs') + '?')) return;
+            await fetch('api/logs', { method: 'DELETE' });
+            showToast(t('logsCleared'), 'success');
+            fetchLogs();
         }
 
         // --- Toast ---

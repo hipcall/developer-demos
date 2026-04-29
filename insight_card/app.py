@@ -250,6 +250,16 @@ def delete_contact(contact_id):
     return jsonify({"status": "deleted"})
 
 
+@app.route('/api/logs', methods=['DELETE'])
+@login_required
+def clear_logs():
+    conn = get_db()
+    conn.execute('DELETE FROM card_logs')
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "cleared"})
+
+
 @app.route('/api/logs')
 @login_required
 def get_logs():
