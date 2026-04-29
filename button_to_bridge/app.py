@@ -147,7 +147,9 @@ def make_call():
         return jsonify({"error": "Invalid or missing Hipcall account selection"}), 400
 
     api_key = account.get('api_key')
-    user_id = account.get('user_id')
+    user_id = str(data.get('user_id', '')).strip()
+    if not user_id:
+        return jsonify({"error": "Missing 'user_id' field"}), 400
 
     callee_number = data.get('callee_number').strip()
     if not callee_number.startswith('+'):

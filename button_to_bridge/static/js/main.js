@@ -8,7 +8,9 @@ const translations = {
         cancel: 'Cancel', save: 'Save',
         editCustomer: 'Edit Customer',
         callBtn: 'Call',
+        userId: 'User ID',
         errSelectAccount: 'Please select a Hipcall account before making a call.',
+        errUserId: 'Please enter a User ID before making a call.',
         successCall: 'Call initiated! Your phone/app will ring first.',
         errLoadCustomers: 'Failed to load customers.',
         errCall: 'Failed',
@@ -28,7 +30,9 @@ const translations = {
         cancel: 'İptal', save: 'Kaydet',
         editCustomer: 'Müşteriyi Düzenle',
         callBtn: 'Ara',
+        userId: 'Kullanıcı ID',
         errSelectAccount: 'Arama yapmadan önce lütfen bir Hipcall hesabı seçin.',
+        errUserId: 'Arama yapmadan önce lütfen bir Kullanıcı ID girin.',
         successCall: 'Arama başlatıldı! Önce telefonunuz/uygulamanız çalacak.',
         errLoadCustomers: 'Müşteriler yüklenemedi.',
         errCall: 'Başarısız',
@@ -48,7 +52,9 @@ const translations = {
         cancel: 'Annuleren', save: 'Opslaan',
         editCustomer: 'Klant Bewerken',
         callBtn: 'Bellen',
+        userId: 'Gebruikers-ID',
         errSelectAccount: 'Selecteer een Hipcall-account voordat u belt.',
+        errUserId: 'Voer een gebruikers-ID in voordat u belt.',
         successCall: 'Gesprek gestart! Uw telefoon/app gaat eerst over.',
         errLoadCustomers: 'Klanten konden niet worden geladen.',
         errCall: 'Mislukt',
@@ -68,7 +74,9 @@ const translations = {
         cancel: 'Annulla', save: 'Salva',
         editCustomer: 'Modifica Cliente',
         callBtn: 'Chiama',
+        userId: 'ID Utente',
         errSelectAccount: 'Seleziona un account Hipcall prima di effettuare una chiamata.',
+        errUserId: 'Inserisci un ID utente prima di effettuare una chiamata.',
         successCall: 'Chiamata avviata! Il tuo telefono/app squillera prima.',
         errLoadCustomers: 'Impossibile caricare i clienti.',
         errCall: 'Fallito',
@@ -88,7 +96,9 @@ const translations = {
         cancel: 'Annuler', save: 'Enregistrer',
         editCustomer: 'Modifier le Client',
         callBtn: 'Appeler',
+        userId: 'ID Utilisateur',
         errSelectAccount: 'Veuillez sélectionner un compte Hipcall avant d\'appeler.',
+        errUserId: 'Veuillez entrer un ID utilisateur avant d\'appeler.',
         successCall: 'Appel initié ! Votre téléphone/application sonnera en premier.',
         errLoadCustomers: 'Impossible de charger les clients.',
         errCall: 'Échec',
@@ -108,7 +118,9 @@ const translations = {
         cancel: 'Cancelar', save: 'Guardar',
         editCustomer: 'Editar Cliente',
         callBtn: 'Llamar',
+        userId: 'ID de Usuario',
         errSelectAccount: 'Por favor selecciona una cuenta Hipcall antes de llamar.',
+        errUserId: 'Por favor ingresa un ID de usuario antes de llamar.',
         successCall: '¡Llamada iniciada! Tu teléfono/aplicación sonará primero.',
         errLoadCustomers: 'No se pudieron cargar los clientes.',
         errCall: 'Fallido',
@@ -128,7 +140,9 @@ const translations = {
         cancel: 'Abbrechen', save: 'Speichern',
         editCustomer: 'Kunde bearbeiten',
         callBtn: 'Anrufen',
+        userId: 'Benutzer-ID',
         errSelectAccount: 'Bitte wählen Sie ein Hipcall-Konto aus, bevor Sie anrufen.',
+        errUserId: 'Bitte geben Sie eine Benutzer-ID ein, bevor Sie anrufen.',
         successCall: 'Anruf gestartet! Ihr Telefon/Ihre App klingelt zuerst.',
         errLoadCustomers: 'Kunden konnten nicht geladen werden.',
         errCall: 'Fehlgeschlagen',
@@ -172,6 +186,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const saved = localStorage.getItem('smart_crm_lang') || 'en';
     document.getElementById('langSwitcher').value = saved;
     changeLanguage();
+    const savedUserId = localStorage.getItem('smart_crm_user_id') || '';
+    document.getElementById('user-id-input').value = savedUserId;
 });
 
 async function fetchCustomers() {
@@ -223,10 +239,20 @@ function escapeHTML(str) {
     );
 }
 
+function saveUserId() {
+    localStorage.setItem('smart_crm_user_id', document.getElementById('user-id-input').value);
+}
+
 async function initiateCall(phoneNumber, buttonElement) {
     const manageId = document.getElementById('account-selector').value;
     if (!manageId) {
         showAlert(t('errSelectAccount'), 'danger');
+        return;
+    }
+
+    const userId = document.getElementById('user-id-input').value.trim();
+    if (!userId) {
+        showAlert(t('errUserId'), 'danger');
         return;
     }
 
@@ -238,7 +264,7 @@ async function initiateCall(phoneNumber, buttonElement) {
         const response = await fetch('api/call', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ callee_number: phoneNumber, manage_id: manageId })
+            body: JSON.stringify({ callee_number: phoneNumber, manage_id: manageId, user_id: userId })
         });
 
         const data = await response.json();
