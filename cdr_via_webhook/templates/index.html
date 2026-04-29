@@ -4,12 +4,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hipcall CDR Dashboard | CRM</title>
+    <title>Hipcall CDR Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .account-bar {
+            background: var(--surface);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .account-bar label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        .account-bar select {
+            flex: 1;
+            max-width: 360px;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+        .lang-select {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-family: inherit;
+            font-size: 0.8rem;
+            cursor: pointer;
+            outline: none;
+            width: calc(100% - 48px);
+            margin: 0 24px 8px;
+        }
+        .lang-select option { background: #1e293b; color: white; }
+        .btn-danger-sm {
+            background: var(--danger, #ef4444);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 7px 14px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: opacity 0.2s;
+        }
+        .btn-danger-sm:hover { opacity: 0.85; }
+    </style>
 </head>
 
 <body>
@@ -19,57 +75,73 @@
                 <i class="fas fa-headset"></i>
                 <div style="display: flex; flex-direction: column;">
                     <span style="line-height: 1;">Dummy CRM</span>
-                    <small style="font-size: 0.7rem; font-weight: 300; opacity: 0.8; margin-top: 4px;">Online call
-                        logs</small>
+                    <small style="font-size: 0.7rem; font-weight: 300; opacity: 0.8; margin-top: 4px;" data-i18n="subtitle">Online call logs</small>
                 </div>
             </div>
-            <div class="sidebar-footer">
-                <p>Dummy App v1.0</p>
+            <div class="sidebar-footer" style="padding-bottom: 8px;">
+                <select id="langSwitcher" class="lang-select" onchange="changeLanguage()">
+                    <option value="en">English</option>
+                    <option value="tr">Türkçe</option>
+                    <option value="nl">Nederlands</option>
+                    <option value="it">Italiano</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                    <option value="de">Deutsch</option>
+                </select>
+                <a href="{{ url_for('logout') }}" style="display:flex; align-items:center; gap:8px; color:var(--sidebar-text); font-size:0.85rem; padding: 8px 24px; text-decoration:none; transition:color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--sidebar-text)'">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
             </div>
         </aside>
 
         <main class="main-content">
-
             <div class="content-wrapper">
                 <div class="page-title">
-                    <h1>Call Detail Reports (CDR)</h1>
-                    <p>All terminated call records via Hipcall.</p>
+                    <h1 data-i18n="pageTitle">Call Detail Reports (CDR)</h1>
+                    <p data-i18n="pageDesc">All terminated call records via Hipcall.</p>
+                </div>
+
+                <div id="alert-container"></div>
+
+                <div class="account-bar">
+                    <label>
+                        <i class="fas fa-building" style="color: var(--primary); margin-right: 6px;"></i>
+                        <span data-i18n="hipcallAccount">Hipcall Account</span>
+                    </label>
+                    <select id="account-selector">
+                        <option value="" data-i18n-opt="selectAccount">— Select an account to play recordings —</option>
+                        {% for account in accounts %}
+                        <option value="{{ account.account_id }}">{{ account.label }} ({{ account.account_id }})</option>
+                        {% endfor %}
+                    </select>
                 </div>
 
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-icon incoming">
-                            <i class="fas fa-arrow-down"></i>
-                        </div>
+                        <div class="stat-icon incoming"><i class="fas fa-arrow-down"></i></div>
                         <div class="stat-info">
-                            <h3>Inbound Calls</h3>
+                            <h3 data-i18n="inboundCalls">Inbound Calls</h3>
                             <p id="total-inbound">0</p>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon outgoing">
-                            <i class="fas fa-arrow-up"></i>
-                        </div>
+                        <div class="stat-icon outgoing"><i class="fas fa-arrow-up"></i></div>
                         <div class="stat-info">
-                            <h3>Outbound Calls</h3>
+                            <h3 data-i18n="outboundCalls">Outbound Calls</h3>
                             <p id="total-outbound">0</p>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon missed">
-                            <i class="fas fa-phone-slash"></i>
-                        </div>
+                        <div class="stat-icon missed"><i class="fas fa-phone-slash"></i></div>
                         <div class="stat-info">
-                            <h3>Missed Calls</h3>
+                            <h3 data-i18n="missedCalls">Missed Calls</h3>
                             <p id="total-missed">0</p>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon duration">
-                            <i class="fas fa-clock"></i>
-                        </div>
+                        <div class="stat-icon duration"><i class="fas fa-clock"></i></div>
                         <div class="stat-info">
-                            <h3>Avg. Duration</h3>
+                            <h3 data-i18n="avgDuration">Avg. Duration</h3>
                             <p id="avg-duration">0s</p>
                         </div>
                     </div>
@@ -77,24 +149,28 @@
 
                 <div class="table-container">
                     <div class="table-header">
-                        <h2>Recent Calls</h2>
-                        <button class="btn-refresh" onclick="fetchCDRs()">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
+                        <h2 data-i18n="recentCalls">Recent Calls</h2>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <button class="btn-danger-sm" onclick="clearHistory()">
+                                <i class="fas fa-trash"></i> <span data-i18n="clearHistory">Clear History</span>
+                            </button>
+                            <button class="btn-refresh" onclick="fetchCDRs()">
+                                <i class="fas fa-sync-alt"></i> <span data-i18n="refresh">Refresh</span>
+                            </button>
+                        </div>
                     </div>
                     <table class="cdr-table">
                         <thead>
                             <tr>
-                                <th>Direction</th>
-                                <th>Caller</th>
-                                <th>Callee</th>
-                                <th>Duration</th>
-                                <th>Date</th>
-                                <th>Action</th>
+                                <th data-i18n="direction">Direction</th>
+                                <th data-i18n="caller">Caller</th>
+                                <th data-i18n="callee">Callee</th>
+                                <th data-i18n="duration">Duration</th>
+                                <th data-i18n="date">Date</th>
+                                <th data-i18n="action">Action</th>
                             </tr>
                         </thead>
-                        <tbody id="cdr-body">
-                        </tbody>
+                        <tbody id="cdr-body"></tbody>
                     </table>
                 </div>
             </div>
@@ -105,52 +181,53 @@
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
             <div class="modal-header">
-                <h2><i class="fas fa-info-circle"></i> Call Details</h2>
+                <h2><i class="fas fa-info-circle"></i> <span data-i18n="callDetails">Call Details</span></h2>
                 <div id="modal-call-status" class="tag">Completed</div>
             </div>
             <div class="modal-body">
                 <div class="detail-row">
-                    <span class="label">Call UUID:</span>
+                    <span class="label" data-i18n="callUuid">Call UUID:</span>
                     <span id="detail-uuid" class="value">-</span>
                 </div>
                 <div class="detail-grid">
                     <div class="detail-item">
-                        <span class="label">Caller:</span>
+                        <span class="label" data-i18n="callerLabel">Caller:</span>
                         <span id="detail-caller" class="value">-</span>
                     </div>
                     <div class="detail-item">
-                        <span class="label">Callee:</span>
+                        <span class="label" data-i18n="calleeLabel">Callee:</span>
                         <span id="detail-callee" class="value">-</span>
                     </div>
                     <div class="detail-item">
-                        <span class="label">Direction:</span>
+                        <span class="label" data-i18n="directionLabel">Direction:</span>
                         <span id="detail-direction" class="value">-</span>
                     </div>
                     <div class="detail-item">
-                        <span class="label">Duration:</span>
+                        <span class="label" data-i18n="durationLabel">Duration:</span>
                         <span id="detail-duration" class="value">-</span>
                     </div>
                     <div class="detail-item">
-                        <span class="label">Start:</span>
+                        <span class="label" data-i18n="startLabel">Start:</span>
                         <span id="detail-start" class="value">-</span>
                     </div>
                     <div class="detail-item">
-                        <span class="label">End:</span>
+                        <span class="label" data-i18n="endLabel">End:</span>
                         <span id="detail-end" class="value">-</span>
                     </div>
                     <div class="detail-item">
-                        <span class="label">Hangup Cause:</span>
+                        <span class="label" data-i18n="hangupLabel">Hangup Cause:</span>
                         <span id="detail-hangup" class="value">-</span>
                     </div>
                 </div>
                 <div class="record-player" id="record-player-container" style="display:none;">
-                    <h3><i class="fas fa-play"></i> Recording</h3>
+                    <h3><i class="fas fa-play"></i> <span data-i18n="recording">Recording</span></h3>
+                    <div id="record-player-msg" style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 8px; display:none;"></div>
                     <audio id="detail-audio" controls>
                         Your browser does not support audio playback.
                     </audio>
                 </div>
                 <div class="raw-data">
-                    <h3><i class="fas fa-code"></i> Raw Data (Webhook Payload)</h3>
+                    <h3><i class="fas fa-code"></i> <span data-i18n="rawData">Raw Data (Webhook Payload)</span></h3>
                     <pre id="detail-raw"></pre>
                 </div>
             </div>
