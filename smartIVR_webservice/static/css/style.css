@@ -68,6 +68,28 @@ header {
 .header-actions {
     display: flex;
     gap: 1rem;
+    align-items: center;
+}
+
+.lang-select {
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.lang-select:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.lang-select:focus {
+    outline: none;
+    border-color: var(--primary);
 }
 
 /* Buttons */

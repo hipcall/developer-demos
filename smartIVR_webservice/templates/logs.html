@@ -18,11 +18,20 @@
                 <h1>SmartIVR <span>Logs</span></h1>
             </div>
             <div class="header-actions">
+                <select id="langSwitcher" class="lang-select" onchange="changeLanguage()">
+                    <option value="en">English</option>
+                    <option value="tr">Türkçe</option>
+                    <option value="nl">Nederlands</option>
+                    <option value="it">Italiano</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                    <option value="de">Deutsch</option>
+                </select>
                 <a href="." class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Go Back
+                    <i class="fas fa-arrow-left"></i> <span data-i18n="btnGoBack">Go Back</span>
                 </a>
                 <button id="clearLogs" class="btn btn-danger">
-                    <i class="fas fa-trash"></i> Clear All
+                    <i class="fas fa-trash"></i> <span data-i18n="btnClearAll">Clear All</span>
                 </button>
             </div>
         </header>
@@ -34,51 +43,73 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        const translations = {
+            en: { btnGoBack: 'Go Back', btnClearAll: 'Clear All', noLogs: 'No log records found.', incomingRequest: 'INCOMING REQUEST (JSON)', systemResponse: 'SYSTEM RESPONSE', confirmClear: 'Are you sure you want to delete all logs?' },
+            tr: { btnGoBack: 'Geri Dön', btnClearAll: 'Tümünü Temizle', noLogs: 'Kayıt bulunamadı.', incomingRequest: 'GELEN İSTEK (JSON)', systemResponse: 'SİSTEM YANITI', confirmClear: 'Tüm kayıtları silmek istediğinizden emin misiniz?' },
+            nl: { btnGoBack: 'Terug', btnClearAll: 'Alles Wissen', noLogs: 'Geen logboekrecords gevonden.', incomingRequest: 'INKOMEND VERZOEK (JSON)', systemResponse: 'SYSTEEMRESPONS', confirmClear: 'Weet u zeker dat u alle logboeken wilt verwijderen?' },
+            it: { btnGoBack: 'Indietro', btnClearAll: 'Cancella Tutto', noLogs: 'Nessun record trovato.', incomingRequest: 'RICHIESTA RICEVUTA (JSON)', systemResponse: 'RISPOSTA DI SISTEMA', confirmClear: 'Sei sicuro di voler eliminare tutti i log?' },
+            fr: { btnGoBack: 'Retour', btnClearAll: 'Tout Effacer', noLogs: 'Aucun enregistrement trouvé.', incomingRequest: 'REQUÊTE ENTRANTE (JSON)', systemResponse: 'RÉPONSE SYSTÈME', confirmClear: 'Êtes-vous sûr de vouloir supprimer tous les journaux?' },
+            es: { btnGoBack: 'Volver', btnClearAll: 'Borrar Todo', noLogs: 'No se encontraron registros.', incomingRequest: 'SOLICITUD ENTRANTE (JSON)', systemResponse: 'RESPUESTA DEL SISTEMA', confirmClear: '¿Está seguro de que desea eliminar todos los registros?' },
+            de: { btnGoBack: 'Zurück', btnClearAll: 'Alles Löschen', noLogs: 'Keine Protokolleinträge gefunden.', incomingRequest: 'EINGEHENDE ANFRAGE (JSON)', systemResponse: 'SYSTEMANTWORT', confirmClear: 'Sind Sie sicher, dass Sie alle Protokolle löschen möchten?' }
+        };
+
+        function t(key) {
+            const lang = document.getElementById('langSwitcher').value || 'en';
+            return (translations[lang] && translations[lang][key]) || translations['en'][key] || key;
+        }
+
+        function changeLanguage() {
+            const lang = document.getElementById('langSwitcher').value;
+            localStorage.setItem('smartivr_lang', lang);
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                el.textContent = t(el.getAttribute('data-i18n'));
+            });
+            loadLogs();
+        }
+
+        async function loadLogs() {
+            const response = await fetch('api/logs');
+            const logs = await response.json();
+            renderLogs(logs);
+        }
+
+        function renderLogs(logs) {
             const logsContainer = document.getElementById('logsContainer');
-            const clearLogsBtn = document.getElementById('clearLogs');
-
-            // Load logs
-            const loadLogs = async () => {
-                const response = await fetch('api/logs');
-                const logs = await response.json();
-                renderLogs(logs);
-            };
-
-            const renderLogs = (logs) => {
-                if (logs.length === 0) {
-                    logsContainer.innerHTML = '<div class="no-logs">No log records found.</div>';
-                    return;
-                }
-                logsContainer.innerHTML = logs.map(log => `
-                    <div class="log-item">
-                        <div class="log-header">
-                            <span class="log-time"><i class="far fa-clock"></i> ${log.timestamp}</span>
+            if (logs.length === 0) {
+                logsContainer.innerHTML = `<div class="no-logs">${t('noLogs')}</div>`;
+                return;
+            }
+            logsContainer.innerHTML = logs.map(log => `
+                <div class="log-item">
+                    <div class="log-header">
+                        <span class="log-time"><i class="far fa-clock"></i> ${log.timestamp}</span>
+                    </div>
+                    <div class="log-body">
+                        <div class="log-payload">
+                            <strong>${t('incomingRequest')}</strong>
+                            <pre>${JSON.stringify(JSON.parse(log.request_body), null, 2)}</pre>
                         </div>
-                        <div class="log-body">
-                            <div class="log-payload">
-                                <strong>INCOMING REQUEST (JSON)</strong>
-                                <pre>${JSON.stringify(JSON.parse(log.request_body), null, 2)}</pre>
-                            </div>
-                            <div class="log-payload">
-                                <strong>SYSTEM RESPONSE</strong>
-                                <pre>${JSON.stringify(JSON.parse(log.response_body), null, 2)}</pre>
-                            </div>
+                        <div class="log-payload">
+                            <strong>${t('systemResponse')}</strong>
+                            <pre>${JSON.stringify(JSON.parse(log.response_body), null, 2)}</pre>
                         </div>
                     </div>
-                `).join('');
-            };
+                </div>
+            `).join('');
+        }
 
-            // Clear logs
-            clearLogsBtn.onclick = async () => {
-                if (confirm('Are you sure you want to delete all logs?')) {
+        document.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('smartivr_lang') || 'en';
+            document.getElementById('langSwitcher').value = saved;
+
+            document.getElementById('clearLogs').onclick = async () => {
+                if (confirm(t('confirmClear'))) {
                     await fetch('/api/logs', { method: 'DELETE' });
                     loadLogs();
                 }
             };
 
-            loadLogs();
-            // Refresh every 10 seconds
+            changeLanguage();
             setInterval(loadLogs, 10000);
         });
     </script>

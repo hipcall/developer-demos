@@ -99,8 +99,20 @@
             <i class="fas fa-robot"></i>
             <div>
                 <h1>SmartIVR <span>CRM</span></h1>
-                <p>Sign in to continue</p>
+                <p id="loginSubtitle">Sign in to continue</p>
             </div>
+        </div>
+
+        <div style="text-align:right; margin-bottom:1rem;">
+            <select id="langSwitcher" class="lang-select" onchange="changeLanguage()" style="font-size:0.8rem;">
+                <option value="en">English</option>
+                <option value="tr">Türkçe</option>
+                <option value="nl">Nederlands</option>
+                <option value="it">Italiano</option>
+                <option value="fr">Français</option>
+                <option value="es">Español</option>
+                <option value="de">Deutsch</option>
+            </select>
         </div>
 
         {% if error %}
@@ -110,15 +122,43 @@
         <form method="POST" action="{{ url_for('login') }}">
             <input type="hidden" name="next" value="{{ next }}">
             <div class="form-group">
-                <label for="username">Username</label>
+                <label for="username" id="labelUsername">Username</label>
                 <input type="text" id="username" name="username" autocomplete="username" required autofocus>
             </div>
             <div class="form-group">
-                <label for="password">Password</label>
+                <label for="password" id="labelPassword">Password</label>
                 <input type="password" id="password" name="password" autocomplete="current-password" required>
             </div>
-            <button type="submit" class="btn-login">Sign in</button>
+            <button type="submit" class="btn-login" id="btnSignIn">Sign in</button>
         </form>
     </div>
+
+    <script>
+        const loginTranslations = {
+            en: { subtitle: 'Sign in to continue', username: 'Username', password: 'Password', signIn: 'Sign in' },
+            tr: { subtitle: 'Devam etmek için giriş yapın', username: 'Kullanıcı Adı', password: 'Şifre', signIn: 'Giriş Yap' },
+            nl: { subtitle: 'Log in om verder te gaan', username: 'Gebruikersnaam', password: 'Wachtwoord', signIn: 'Inloggen' },
+            it: { subtitle: 'Accedi per continuare', username: 'Nome Utente', password: 'Password', signIn: 'Accedi' },
+            fr: { subtitle: 'Connectez-vous pour continuer', username: "Nom d'utilisateur", password: 'Mot de passe', signIn: 'Se connecter' },
+            es: { subtitle: 'Inicia sesión para continuar', username: 'Usuario', password: 'Contraseña', signIn: 'Iniciar sesión' },
+            de: { subtitle: 'Anmelden um fortzufahren', username: 'Benutzername', password: 'Passwort', signIn: 'Anmelden' }
+        };
+
+        function changeLanguage() {
+            const lang = document.getElementById('langSwitcher').value;
+            localStorage.setItem('smartivr_lang', lang);
+            const tr = loginTranslations[lang] || loginTranslations['en'];
+            document.getElementById('loginSubtitle').textContent = tr.subtitle;
+            document.getElementById('labelUsername').textContent = tr.username;
+            document.getElementById('labelPassword').textContent = tr.password;
+            document.getElementById('btnSignIn').textContent = tr.signIn;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('smartivr_lang') || 'en';
+            document.getElementById('langSwitcher').value = saved;
+            changeLanguage();
+        });
+    </script>
 </body>
 </html>
